@@ -1,0 +1,144 @@
+NAME
+    Text::ANSITable - Create a nice formatted table using extended ASCII and
+    ANSI colors
+
+VERSION
+    version 0.00
+
+SYNOPSIS
+     use 5.010;
+     use Text::ANSITable;
+     my $t = Text::ANSITable->new(
+         border_style => 'hdouble_single_utf8',
+     );
+     $t->cols(["name", "color", "price"]);
+     $t->add_row(["chiki"      , "yellow", 2000]);
+     $t->add_row(["lays"       , "green" , 5000]);
+     $t->add_row(["tao kae noi", "blue"  , 4500]);
+     my $color = $t->cell(2, 1); # => "blue"
+     $t->cell(2, 1, "red");
+     binmode(STDOUT, ":utf8");
+     say $t;
+
+    will print something like (but with color and extended ASCII characters
+    where supported by terminal):
+
+DESCRIPTION
+    NOTE: THIS IS A VERY VERY VERY EARLY VERSION WHERE MOST THINGS ARE NOT
+    EVEN IMPLEMENTED (BUT THE ABOVE SYNOPSIS WORKS THOUGH).
+
+    This module is yet another text table formatter module like
+    Text::ASCIITable or Text::SimpleTable, with the following differences:
+
+    *   Colors and color themes
+
+        ANSI color codes will be used by default, but will degrade to black
+        and white if terminal does not support them.
+
+    *   Extended ASCII characters
+
+        Extended ASCII (box-drawing) characters will be used by default, but
+        will degrade to using normal ASCII characters if terminal does not
+        support them.
+
+    *   Unicode
+
+        Use UTF-8 by default and handle wide characters so they are kept
+        aligned.
+
+    Compared to Text::ASCIITable, it uses "lower_case" method/attr names
+    instead of "CamelCase", and it uses arrayref for "cols" and "add_row".
+    When specifying border styles, the order of characters are slightly
+    different.
+
+    It uses Moo object system.
+
+ATTRIBUTES
+  rows => ARRAY OF ARRAY OF STR
+    Table contents.
+
+  cols => ARRAY OF STR
+    Column names.
+
+  border_style => STR
+    Name of border style to use when drawing the table. Default is
+    "single_eascii", or "single_ascii". For available border styles, see
+    %Text::ANSITable::border_styles.
+
+  color_theme => STR
+    Name of color theme to use when drawing the table. Default is "default",
+    or "no_color". For available color themes, see
+    %Text::ANSITable::color_themes.
+
+  draw_row_separator => BOOL (default 0)
+    Whether to draw separator between rows.
+
+METHODS
+  $t = Text::ANSITable->new(%attrs) => OBJ
+    Constructor.
+
+  $t->add_row(\@row) => OBJ
+  $t->cell($row_num, $col[, $val]) => OBJ
+    Get or set cell value at row #$row_num and column #$col (if $col is a
+    number) or column named $col (if $col does not look like a number).
+
+  $t->draw => STR
+    Draw the table and return the result. Or you can just stringify the
+    string:
+
+     "$t"
+
+FAQ
+  I'm getting 'Wide character in print' error message when I use utf8 border styles!
+    Add something like this first before printing to your output:
+
+     binmode(STDOUT, ":utf8");
+
+BORDER STYLES
+    For border styles, here are the characters to supply:
+
+     AbbbCbbbD        Top border characters
+     E   F   G        Vertical separators for header row
+     HiiiJiiiK        Separator between header row and first data row
+     L   M   N        Vertical separators for data row
+     OpppQpppR        Separator between data rows
+     L   M   N
+     StttUtttV        Bottom border characters
+
+    Each character must have visual width of 1.
+
+    See existing border styles in the source code for examples. Format for
+    "chars":
+
+     [
+       [A, b, C, D],
+       [E, F, G],
+       [H, i, J, K],
+       [L, M, N],
+       [O, p, Q, R],
+       [S, t, U, V],
+     ]
+
+SEE ALSO
+    Text::Table
+
+    Text::SimpleTable
+
+    Text::ASCIITable, which I usually used.
+
+    Text::UnicodeTable::Simple
+
+    Table::Simple (uses Moose)
+
+AUTHOR
+    Steven Haryanto <stevenharyanto@gmail.com>
+
+COPYRIGHT AND LICENSE
+    This software is copyright (c) 2013 by Steven Haryanto.
+
+    This is free software; you can redistribute it and/or modify it under
+    the same terms as the Perl 5 programming language system itself.
+
+FUNCTIONS
+    None are exported by default, but they are exportable.
+
