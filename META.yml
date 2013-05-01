@@ -4,6 +4,8 @@ author:
   - 'Steven Haryanto <stevenharyanto@gmail.com>'
 build_requires:
   Module::Build: 0.3601
+  Test::Exception: 0
+  Test::More: 0.98
 configure_requires:
   Module::Build: 0.3601
 dynamic_config: 0
@@ -14,10 +16,17 @@ meta-spec:
   version: 1.4
 name: Text-ANSITable
 requires:
+  Color::ANSI::Util: 0.03
+  Data::Clone: 0
+  Data::Unixish::Apply: 1.32
+  Log::Any: 0
+  Module::List: 0
   Moo: 0
-  Text::ANSI::Util: 0
+  SHARYANTO::Color::Util: 0
+  Text::ANSI::Util: 0.08
+  Text::ASCIITable: 0
   perl: 5.010001
 resources:
   homepage: http://metacpan.org/release/Text-ANSITable
   repository: http://github.com/sharyanto/perl-Text-ANSITable
-version: 0.00
+version: 0.01

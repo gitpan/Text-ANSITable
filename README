@@ -3,132 +3,601 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.00
+    version 0.01
 
 SYNOPSIS
      use 5.010;
      use Text::ANSITable;
-     my $t = Text::ANSITable->new(
-         border_style => 'hdouble_single_utf8',
-     );
-     $t->cols(["name", "color", "price"]);
-     $t->add_row(["chiki"      , "yellow", 2000]);
-     $t->add_row(["lays"       , "green" , 5000]);
-     $t->add_row(["tao kae noi", "blue"  , 4500]);
-     my $color = $t->cell(2, 1); # => "blue"
-     $t->cell(2, 1, "red");
-     binmode(STDOUT, ":utf8");
-     say $t;
 
-    will print something like (but with color and extended ASCII characters
-    where supported by terminal):
+     # don't forget this if you want to output utf8 characters
+     binmode(STDOUT, ":utf8");
+
+     my $t = Text::ANSITable->new;
+
+     # set styles
+     $t->border_style('bold_utf8');  # if not, it picks a nice default for you
+     $t->color_theme('default_256'); # if not, it picks a nice default for you
+
+     # fill data
+     $t->columns(["name", "color", "price"]);
+     $t->add_row(["chiki"      , "yellow",  2000]);
+     $t->add_row(["lays"       , "green" ,  7000]);
+     $t->add_row(["tao kae noi", "blue"  , 18500]);
+
+     # draw it!
+     say $t->draw;
 
 DESCRIPTION
-    NOTE: THIS IS A VERY VERY VERY EARLY VERSION WHERE MOST THINGS ARE NOT
-    EVEN IMPLEMENTED (BUT THE ABOVE SYNOPSIS WORKS THOUGH).
-
     This module is yet another text table formatter module like
     Text::ASCIITable or Text::SimpleTable, with the following differences:
 
     *   Colors and color themes
 
-        ANSI color codes will be used by default, but will degrade to black
-        and white if terminal does not support them.
+        ANSI color codes will be used by default (even 256 and 24bit
+        colors), but will degrade to lower color depth and black/white
+        according to terminal support.
 
-    *   Extended ASCII characters
+    *   Box-drawing characters
 
-        Extended ASCII (box-drawing) characters will be used by default, but
-        will degrade to using normal ASCII characters if terminal does not
-        support them.
+        Box-drawing characters will be used by default, but will degrade to
+        using normal ASCII characters if terminal does not support them.
 
-    *   Unicode
+    *   Unicode and wide character support
 
-        Use UTF-8 by default and handle wide characters so they are kept
+        Border styles using Unicode characters (double lines, bold/heavy
+        lines, brick style, etc). Columns containing wide characters stay
         aligned.
 
     Compared to Text::ASCIITable, it uses "lower_case" method/attr names
-    instead of "CamelCase", and it uses arrayref for "cols" and "add_row".
-    When specifying border styles, the order of characters are slightly
-    different.
+    instead of "CamelCase", and it uses arrayref for "columns" and
+    "add_row". When specifying border styles, the order of characters are
+    slightly different. More fine-grained options to customize appearance.
 
     It uses Moo object system.
 
+BORDER STYLES
+    To list available border styles:
+
+     say $_ for $t->list_border_styles;
+
+    Or you can also try out borders using the provided
+    ansitable-list-border-styles script.
+
+    Border styles are searched in "Text::ANSITable::BorderStyle::*" modules
+    (asciibetically), in the %border_styles variable. Hash keys are border
+    style names, hash values are border style specifications.
+
+    To choose border style, either set the "border_style" attribute to an
+    available border style or a border specification directly.
+
+     $t->border_style("singleh_boxchar");
+     $t->border_style("foo");   # dies, no such border style
+     $t->border_style({ ... }); # set specification directly
+
+    If no border style is selected explicitly, a nice default will be
+    chosen. You can also set the "ANSITABLE_BORDER_STYLE" environment
+    variable to set the default.
+
+    When there are lots of "Text::ANSITable::BorderStyle::*" modules,
+    searching can add some overhead. To avoid searching in all modules, you
+    can specify name using "Subpackage::Name" syntax, e.g.:
+
+     # will only search in Text::ANSITable::BorderStyle::Default
+     $t->color_theme("Default::bricko");
+
+    To create a new border style, create a module under
+    "Text::ANSITable::BorderStyle::". Please see one of the existing border
+    style modules for example, like Text::ANSITable::BorderStyle::Default.
+    Format for the "chars" specification key:
+
+     [
+       [A, b, C, D],  # 0
+       [E, F, G],     # 1
+       [H, i, J, K],  # 2
+       [L, M, N],     # 3
+       [O, p, Q, R],  # 4
+       [S, t, U, V],  # 5
+     ]
+
+     AbbbCbbbD        #0 Top border characters
+     E   F   G        #1 Vertical separators for header row
+     HiiiJiiiK        #2 Separator between header row and first data row
+     L   M   N        #3 Vertical separators for data row
+     OpppQpppR        #4 Separator between data rows
+     L   M   N        #3
+     StttUtttV        #5 Bottom border characters
+
+    Each character must have visual width of 1. But if A is an empty string,
+    the top border line will not be drawn. Likewise: if H is an empty
+    string, the header-data separator line will not be drawn; if S is an
+    empty string, bottom border line will not be drawn.
+
+COLOR THEMES
+    To list available color themes:
+
+     say $_ for $t->list_color_themes;
+
+    Or you can also run the provided ansitable-list-color-themes script.
+
+    Color themes are searched in "Text::ANSITable::ColorTheme::*" modules
+    (asciibetically), in the %color_themes variable. Hash keys are color
+    theme names, hash values are color theme specifications.
+
+    To choose a color theme, either set the "color_theme" attribute to an
+    available color theme or a border specification directly.
+
+     $t->color_theme("default_256");
+     $t->color_theme("foo");    # dies, no such color theme
+     $t->color_theme({ ... });  # set specification directly
+
+    If no color theme is selected explicitly, a nice default will be chosen.
+    You can also set the "ANSITABLE_COLOR_THEME" environment variable to set
+    the default.
+
+    When there are lots of "Text::ANSITable::ColorTheme::*" modules,
+    searching can add some overhead. To avoid searching in all modules, you
+    can specify name using "Subpackage::Name" syntax, e.g.:
+
+     # will only search in Text::ANSITable::ColorTheme::Default
+     $t->color_theme("Default::default_256");
+
+    To create a new color theme, create a module under
+    "Text::ANSITable::ColorTheme::". Please see one of the existing color
+    theme modules for example, like Text::ANSITable::ColorTheme::Default.
+    Color for items must be specified as 6-hexdigit RGB value (like
+    "ff0088") or ANSI escape codes (e.g. "\e[31;1m" for bold red foregound
+    color, or "\e[48;5;226m" for lemon yellow background color). You can
+    also return a 2-element array containing RGB value for foreground and
+    background, respectively.
+
+    For flexibility, color can also be a coderef which should produce a
+    color value. This allows you to do, e.g. gradation border color, random
+    color, etc (see Text::ANSITable::ColorTheme::Demo). Code will be called
+    with ($self, %args) where %args contains various information, like
+    "name" (the item name being requested). You can get the row position
+    from "$self->{_draw}{y}".
+
+COLUMN WIDTHS
+    By default column width is set just so it is enough to show the widest
+    data. Also by default terminal width is respected, so columns are shrunk
+    proportionally to fit terminal width.
+
+    You can set certain column's width using the "column_style()" method,
+    e.g.:
+
+     $t->column_style('colname', width => 20);
+
+    You can also use negative number here to mean *minimum* width.
+
+CELL (HORIZONTAL) PADDING
+    By default cell (horizontal) padding is 1. This can be customized in the
+    following ways (in order of precedence, from lowest):
+
+    *   Setting "column_pad" attribute
+
+        This sets left and right padding for all columns.
+
+    *   Setting "column_lpad" and "column_rpad" attributes
+
+        They set left and right padding, respectively.
+
+    *   Setting per-column padding using "column_style()" method
+
+        Example:
+
+         $t->column_style('colname', pad => 2);
+
+    *   Setting per-column left/right padding using "column_style()" method
+
+         $t->column_style('colname', lpad => 0);
+         $t->column_style('colname', lpad => 1);
+
+COLUMN VERTICAL PADDING
+    Default vertical padding is 0. This can be changed in the following ways
+    (in order of precedence, from lowest):
+
+    *   Setting "row_vpad" attribute
+
+        This sets top and bottom padding.
+
+    *   Setting "row_tpad"/<row_bpad> attribute
+
+        They set top/bottom padding separately.
+
+    *   Setting per-row vertical padding using "row_style()"/add_row(s)
+        method
+
+        Example:
+
+         $t->row_style($rownum, vpad => 1);
+
+        When adding row:
+
+         $t->add_row($rownum, {vpad=>1});
+
+    *   Setting per-row vertical padding using "row_style()"/add_row(s)
+        method
+
+        Example:
+
+         $t->row_style($rownum, tpad => 1);
+         $t->row_style($rownum, bpad => 2);
+
+        When adding row:
+
+         $t->add_row($row, {tpad=>1, bpad=>2});
+
+CELL COLORS
+    By default data format colors are used, e.g. cyan/green for text (using
+    the default color scheme). In absense of that, default_fgcolor and
+    default_bgcolor from the color scheme are used. You can customize colors
+    in the following ways (ordered by precedence, from lowest):
+
+    *   "cell_fgcolor" and "cell_bgcolor" attributes
+
+        Sets all cells' colors. Color should be specified using 6-hexdigit
+        RGB which will be converted to the appropriate terminal color.
+
+        Can also be set to a coderef which will receive ($rownum, $colname)
+        and should return an RGB color.
+
+    *   Per-column color using "column_style()" method
+
+        Example:
+
+         $t->column_style('colname', fgcolor => 'fa8888');
+         $t->column_style('colname', bgcolor => '202020');
+
+    *   Per-row color using "row_style()" method
+
+        Example:
+
+         $t->row_style($rownum, fgcolor => 'fa8888');
+         $t->row_style($rownum, bgcolor => '202020');
+
+        When adding row/rows:
+
+         $t->add_row($row, {fgcolor=>..., bgcolor=>...});
+         $t->add_rows($rows, {bgcolor=>...});
+
+    *   Per-cell color using "cell_style()" method
+
+        Example:
+
+         $t->cell_style($rownum, $colname, fgcolor => 'fa8888');
+         $t->cell_style($rownum, $colname, bgcolor => '202020');
+
+CELL (HORIZONTAL AND VERTICAL) ALIGNMENT
+    By default colors are added according to data formats, e.g. right align
+    for numbers, left for strings, and middle for bools. To customize it,
+    use the following ways (ordered by precedence, from lowest):
+
+    *   Setting per-column alignment using "column_style()" method
+
+        Example:
+
+         $t->column_style($colname, align  => 'middle'); # or left, or right
+         $t->column_style($colname, valign => 'top');    # or bottom, or middle
+
+    *   Setting per-cell alignment using "cell_style()" method
+
+         $t->cell_style($rownum, $colname, align  => 'middle');
+         $t->cell_style($rownum, $colname, valign => 'top');
+
+COLUMN WRAPPING
+    By default column wrapping is turned on. You can set it on/off via the
+    "column_wrap" attribute or per-column "wrap" style.
+
+    Note that cell content past the column width will be clipped/truncated.
+
+CELL FORMATS
+    The formats settings regulates how the data is formatted. The value for
+    this setting will be passed to Data::Unixish::Apply's apply(), as the
+    "functions" argument. So it should be a single string (like "date") or
+    an array (like "['date', ['centerpad', {width=>20}]]").
+
+    See Data::Unixish or install App::dux and then run "dux -l" to see what
+    functions are available. Functions of interest to formatting data
+    include: bool, num, sprintf, sprintfn, wrap, (among others).
+
 ATTRIBUTES
   rows => ARRAY OF ARRAY OF STR
-    Table contents.
+    Store row data.
 
-  cols => ARRAY OF STR
-    Column names.
+  columns => ARRAY OF STR
+    Store column names.
 
-  border_style => STR
-    Name of border style to use when drawing the table. Default is
-    "single_eascii", or "single_ascii". For available border styles, see
-    %Text::ANSITable::border_styles.
+  row_filter => CODE|ARRAY OF INT
+    When drawing, only show rows that match this. Can be a coderef which
+    will receive ($row, $i) and should return bool (true means show this
+    row). Or, can be an array which contains indices of rows that should be
+    shown (e.g. "[0, 1, 3, 4]").
 
-  color_theme => STR
-    Name of color theme to use when drawing the table. Default is "default",
-    or "no_color". For available color themes, see
-    %Text::ANSITable::color_themes.
+  column_filter => CODE|ARRAY OF STR
+    When drawing, only show columns that match this. Can be a coderef which
+    will receive "($colname, $colidx)" and should return bool (true means
+    show this column). Or, can be an array which contains names of columns
+    that should be shown (e.g. "['num', 'size']"). The array form can also
+    be used to reorder columns or show a column multiple times (e.g.
+    "['num', ..., 'num']" for display.
 
-  draw_row_separator => BOOL (default 0)
-    Whether to draw separator between rows.
+  use_color => BOOL
+    Whether to output color. Default is taken from "COLOR" environment
+    variable, or detected via "(-t STDOUT)". If "use_color" is set to 0, an
+    attempt to use a colored color theme (i.e. anything that is not
+    "no_color") will result in an exception.
 
+    (In the future, setting "use_color" to 0 might opt the module to use
+    normal/plain string routines instead of the slower ta_* functions from
+    Text::ANSI::Util).
+
+  color_depth => INT
+    Terminal's color depth. Either 16, 256, or 2**24 (16777216). Default
+    will be retrieved from "COLOR_DEPTH" environment or detected using
+    "Color::ANSI::Util"'s detect_color_depth().
+
+  use_box_chars => BOOL
+    Whether to use box characters. Default is taken from "BOX_CHARS"
+    environment variable, or 1. If "use_box_chars" is set to 0, an attempt
+    to use a border style that uses box chararacters will result in an
+    exception.
+
+  use_utf8 => BOOL
+    Whether to use box characters. Default is taken from "UTF8" environment
+    variable, or detected via LANG environment variable, or 1. If "use_utf8"
+    is set to 0, an attempt to select a border style that uses Unicode
+    characters will result in an exception.
+
+    (In the future, setting "use_utf8" to 0 might opt the module to use the
+    non-"mb_*" version of functions from Text::ANSI::Util, e.g. ta_wrap()
+    instead of ta_mbwrap(), and so on).
+
+  border_style => HASH
+    Border style specification to use.
+
+    You can set this attribute's value with a specification or border style
+    name. See "BORDER STYLES"" in " for more details.
+
+  border_style_args => HASH
+    Some border styles can accept arguments. You can set it here.
+
+  color_theme => HASH
+    Color theme specification to use.
+
+    You can set this attribute's value with a specification or color theme
+    name. See "COLOR THEMES"" in " for more details.
+
+  color_theme_args => HASH
+    Some color themes can accept arguments. You can set it here.
+
+  show_header => BOOL (default: 1)
+    When drawing, whether to show header.
+
+  show_row_separator => INT (default: 2)
+    When drawing, whether to show separator lines between rows. The default
+    (2) is to only show separators drawn using "add_row_separator()". If you
+    set this to 1, lines will be drawn after every data row. If you set this
+    attribute to 0, no lines will be drawn whatsoever.
+
+  column_align => STR
+  column_pad => INT
+    Set (horizontal) padding for all columns. Can be overriden by per-column
+    "pad" style.
+
+  column_lpad => INT
+    Set left padding for all columns. Overrides the "column_pad" attribute.
+    Can be overriden by per-column <lpad> style.
+
+  column_rpad => INT
+    Set right padding for all columns. Overrides the "column_pad" attribute.
+    Can be overriden by per-column <rpad> style.
+
+  row_vpad => INT
+    Set vertical padding for all rows. Can be overriden by per-row "vpad"
+    style.
+
+  row_tpad => INT
+    Set top padding for all rows. Overrides the "row_vpad" attribute. Can be
+    overriden by per-row <tpad> style.
+
+  row_bpad => INT
+    Set bottom padding for all rows. Overrides the "row_vpad" attribute. Can
+    be overriden by per-row <bpad> style.
+
+  row_valign => STR
+  cell_fgcolor => RGB|CODE
+    Set foreground color for all cells. Value should be 6-hexdigit RGB. Can
+    also be a coderef that will receive %args (e.g. row_idx, col_name,
+    col_idx) and should return an RGB color. Can be overriden by per-cell
+    "fgcolor" style.
+
+  cell_bgcolor => RGB|CODE
+    Like "cell_fgcolor" but for background color.
+
+  header_fgcolor => RGB|CODE
+    Set foreground color for all headers. Overrides "cell_fgcolor" for
+    headers. Value should be a 6-hexdigit RGB. Can also be a coderef that
+    will receive %args (e.g. col_name, col_idx) and should return an RGB
+    color.
+
+  header_bgcolor => RGB|CODE
+    Like "header_fgcolor" but for background color.
+
+  header_align => STR
+  header_valign => STR
+  header_vpad => STR
+  header_tpad => STR
+  header_bpad => STR
 METHODS
   $t = Text::ANSITable->new(%attrs) => OBJ
     Constructor.
 
-  $t->add_row(\@row) => OBJ
-  $t->cell($row_num, $col[, $val]) => OBJ
-    Get or set cell value at row #$row_num and column #$col (if $col is a
-    number) or column named $col (if $col does not look like a number).
+  $t->list_border_styles => LIST
+    Return the names of available border styles. Border styles will be
+    searched in "Text::ANSITable::BorderStyle::*" modules.
+
+  $t->list_color_themes => LIST
+    Return the names of available color themes. Color themes will be
+    searched in "Text::ANSITable::ColorTheme::*" modules.
+
+  $t->add_row(\@row[, \%styles]) => OBJ
+    Add a row. Note that row data is not copied, only referenced.
+
+    Can also add per-row styles (which can also be done using
+    "row_style()").
+
+  $t->add_rows(\@rows[, \%styles]) => OBJ
+    Add multiple rows. Note that row data is not copied, only referenced.
+
+    Can also add per-row styles (which can also be done using
+    "row_style()").
+
+  $t->add_row_separator() => OBJ
+    Add a row separator line.
+
+  $t->cell($row_num, $col[, $newval]) => VAL
+    Get or set cell value at row #$row_num (starts from zero) and column
+    #$col (if $col is a number, starts from zero) or column named $col (if
+    $col does not look like a number).
+
+    When setting value, old value is returned.
+
+  $t->column_style($col, $style[, $newval]) => VAL
+    Get or set per-column style for column named/numbered $col. Available
+    values for $style: pad, lpad, width, formats, fgcolor, bgcolor.
+
+    When setting value, old value is returned.
+
+  $t->row_style($row_num[, $newval]) => VAL
+    Get or set per-row style. Available values for $style: vpad, tpad, bpad,
+    fgcolor, bgcolor.
+
+    When setting value, old value is returned.
+
+  $t->cell_style($row_num, $col[, $newval]) => VAL
+    Get or set per-cell style. Available values for $style: formats,
+    fgcolor, bgcolor.
+
+    When setting value, old value is returned.
 
   $t->draw => STR
-    Draw the table and return the result. Or you can just stringify the
-    string:
+    Render table.
 
-     "$t"
+ENVIRONMENT
+  COLOR => BOOL
+    Can be used to set default value for the "color" attribute.
+
+  COLOR_DEPTH => INT
+    Can be used to set default value for the "color_depth" attribute.
+
+  BOX_CHARS => BOOL
+    Can be used to set default value for the "box_chars" attribute.
+
+  UTF8 => BOOL
+    Can be used to set default value for the "utf8" attribute.
+
+  ANSITABLE_BORDER_STYLE => STR
+    Can be used to set default value for "border_style" attribute.
+
+  ANSITABLE_COLOR_THEME => STR
+    Can be used to set default value for "border_style" attribute.
 
 FAQ
-  I'm getting 'Wide character in print' error message when I use utf8 border styles!
+  General
+   My table looks garbled when viewed through pager like less!
+    It's because less escapes ANSI color codes. Try using "-R" option of
+    less to display ANSI color codes raw.
+
+    Or, try not using boxchar border styles, use the utf8 or ascii version.
+    Try not using colors.
+
+   How do I format data?
+    Use the "formats" per-column style or per-cell style. For example:
+
+     $t->column_style('available', formats => [[bool=>{style=>'check_cross'}],
+                                               [centerpad=>{width=>10}]]);
+     $t->column_style('amount'   , formats => [[num=>{decimal_digits=>2}]]);
+     $t->column_style('size'     , formats => [[num=>{style=>'kilo'}]]);
+
+    See Data::Unixish::Apply and Data::Unixish for more details on the
+    available formatting functions.
+
+  Border
+   I'm getting 'Wide character in print' error message when I use utf8 border styles!
     Add something like this first before printing to your output:
 
      binmode(STDOUT, ":utf8");
 
-BORDER STYLES
-    For border styles, here are the characters to supply:
+   How to hide borders?
+    Choose border styles like "space_ascii" or "none_utf8":
 
-     AbbbCbbbD        Top border characters
-     E   F   G        Vertical separators for header row
-     HiiiJiiiK        Separator between header row and first data row
-     L   M   N        Vertical separators for data row
-     OpppQpppR        Separator between data rows
-     L   M   N
-     StttUtttV        Bottom border characters
+     $t->border_style("none");
 
-    Each character must have visual width of 1.
+  I want to hide borders, and I do not want row separators to be shown!
+    The default is for separator lines to be drawn if drawn using
+    "add_row_separator()", e.g.:
 
-    See existing border styles in the source code for examples. Format for
-    "chars":
+     $t->add_row(['row1']);
+     $t->add_row(['row2']);
+     $t->add_row_separator;
+     $t->add_row(['row3']);
 
-     [
-       [A, b, C, D],
-       [E, F, G],
-       [H, i, J, K],
-       [L, M, N],
-       [O, p, Q, R],
-       [S, t, U, V],
-     ]
+    The result will be:
+
+       row1
+       row2
+     --------
+       row3
+
+    However, if you set "show_row_separator" to 0, no separator lines will
+    be drawn whatsoever:
+
+       row1
+       row2
+       row3
+
+  Color
+   How to disable colors?
+    Set "use_color" attribute or "COLOR" environment to 0.
+
+   I'm not seeing colors when output is piped (e.g. to a pager)!
+    The default is to disable colors when (-t STDOUT) is false. You can
+    force-enable colors by setting "use_color" attribute or "COLOR"
+    environment to 1.
+
+   How to enable 256 colors? I'm seeing only 16 colors.
+    Set your "TERM" to "xterm-256color". Also make sure your terminal
+    emulator supports 256 colors.
+
+   How to enable 24bit colors (true color)?
+    Currently only Konsole and the Konsole-based Yakuake terminal emulator
+    software support 24bit colors.
+
+   How to force lower color depth? (e.g. I use Konsole but want 16 colors)
+    Set "COLOR_DEPTH" to 16.
+
+   How to change border gradation color?
+    The default color theme applies vertical color gradation to borders from
+    white (ffffff) to gray (444444). To change this, set "border1" and
+    "border2" theme arguments:
+
+     $t->color_theme_args({border1=>'ff0000', border2=>'00ff00'}); # red to green
+
+TODO/BUGS
+    Attributes: header_{pad,lpad,rpad,align,wrap}
+
+    Column styles: show_{left,right}_border (shorter name? {l,r}border?)
+
+    Row styles: show_{top,bottom}_border (shorter name? {t,b}border?)
+
+    row span? column span?
 
 SEE ALSO
-    Text::Table
+    Other table-formatting modules: Text::Table, Text::SimpleTable,
+    Text::ASCIITable (which I usually used), Text::UnicodeTable::Simple,
+    Table::Simple (uses Moose).
 
-    Text::SimpleTable
-
-    Text::ASCIITable, which I usually used.
-
-    Text::UnicodeTable::Simple
-
-    Table::Simple (uses Moose)
+    Modules used: Text::ANSI::Util, Color::ANSI::Util.
 
 AUTHOR
     Steven Haryanto <stevenharyanto@gmail.com>

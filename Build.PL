@@ -7,7 +7,9 @@ use Module::Build 0.3601;
 
 my %module_build_args = (
   "build_requires" => {
-    "Module::Build" => "0.3601"
+    "Module::Build" => "0.3601",
+    "Test::Exception" => 0,
+    "Test::More" => "0.98"
   },
   "configure_requires" => {
     "Module::Build" => "0.3601"
@@ -17,17 +19,29 @@ my %module_build_args = (
     "Steven Haryanto <stevenharyanto\@gmail.com>"
   ],
   "dist_name" => "Text-ANSITable",
-  "dist_version" => "0.00",
+  "dist_version" => "0.01",
   "license" => "perl",
   "module_name" => "Text::ANSITable",
   "recommends" => {},
   "recursive_test_files" => 1,
   "requires" => {
+    "Color::ANSI::Util" => "0.03",
+    "Data::Clone" => 0,
+    "Data::Unixish::Apply" => "1.32",
+    "Log::Any" => 0,
+    "Module::List" => 0,
     "Moo" => 0,
-    "Text::ANSI::Util" => 0,
+    "SHARYANTO::Color::Util" => 0,
+    "Text::ANSI::Util" => "0.08",
+    "Text::ASCIITable" => 0,
     "perl" => "5.010001"
   },
-  "script_files" => []
+  "script_files" => [
+    "bin/ansitable-list-color-themes",
+    "bin/ansitable-list-border-styles-using-asciitable",
+    "bin/ansitable-list-color-themes-using-asciitable",
+    "bin/ansitable-list-border-styles"
+  ]
 );
 
 

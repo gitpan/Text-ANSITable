@@ -6,9 +6,16 @@ MANIFEST.SKIP
 META.json
 META.yml
 README
+bin/ansitable-list-border-styles
+bin/ansitable-list-border-styles-using-asciitable
+bin/ansitable-list-color-themes
+bin/ansitable-list-color-themes-using-asciitable
 dist.ini
 lib/Text/ANSITable.pm
+lib/Text/ANSITable/BorderStyle/Default.pm
+lib/Text/ANSITable/ColorTheme/Default.pm
 t/00-compile.t
+t/01-basics.t
 t/release-pod-coverage.t
 t/release-pod-syntax.t
 t/release-rinci.t
