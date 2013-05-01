@@ -7,7 +7,7 @@ use warnings;
 use Data::Clone;
 use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
 
-our $VERSION = '0.01'; # VERSION
+our $VERSION = '0.02'; # VERSION
 
 our %color_themes = (
 
@@ -57,12 +57,18 @@ _
             },
 
             header      => "\e[1m",
-            cell_bg     => '',
+            header_bg   => '202020',
+            cell        => undef,
+            cell_bg     => undef,
 
-            num_data    => '',
-            str_data    => '',
-            date_data   => '',
-            bool_data   => '',
+            num_data    => '66ffff',
+            str_data    => undef,
+            date_data   => undef,
+            bool_data   => sub {
+                my ($self, %args) = @_;
+
+                $args{orig_data} ? '00ff00' : 'ff0000';
+            },
         },
     },
 
@@ -87,7 +93,7 @@ Text::ANSITable::ColorTheme::Default - Default color themes
 
 =head1 VERSION
 
-version 0.01
+version 0.02
 
 =head1 AUTHOR
 

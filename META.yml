@@ -29,4 +29,4 @@ requires:
 resources:
   homepage: http://metacpan.org/release/Text-ANSITable
   repository: http://github.com/sharyanto/perl-Text-ANSITable
-version: 0.01
+version: 0.02

@@ -7,7 +7,7 @@ use warnings;
 use Text::ANSITable;
 use Text::ASCIITable;
 
-our $VERSION = '0.01'; # VERSION
+our $VERSION = '0.02'; # VERSION
 
 #binmode(STDOUT, ":utf8");
 
@@ -38,7 +38,7 @@ ansitable-list-border-styles-using-asciitable - Display a list of known border s
 
 =head1 VERSION
 
-version 0.01
+version 0.02
 
 =head1 AUTHOR
 
