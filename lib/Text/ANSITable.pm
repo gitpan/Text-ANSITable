@@ -16,7 +16,7 @@ use Color::ANSI::Util qw(ansi16fg ansi16bg
 use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets);
 
-our $VERSION = '0.03'; # VERSION
+our $VERSION = '0.04'; # VERSION
 
 has use_color => (
     is      => 'rw',
@@ -1159,7 +1159,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.03
+version 0.04
 
 =head1 SYNOPSIS
 
@@ -1879,6 +1879,11 @@ The default color theme applies vertical color gradation to borders from white
 arguments:
 
  $t->color_theme_args({border1=>'ff0000', border2=>'00ff00'}); # red to green
+
+=head3 I'm using terminal emulator with white background, the texts are not very visible!
+
+Try using the "*_whitebg" themes, as the other themes are geared towards
+terminal emulators with black background.
 
 =head1 TODO/BUGS
 

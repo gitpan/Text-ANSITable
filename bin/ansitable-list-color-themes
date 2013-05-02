@@ -6,7 +6,7 @@ use warnings;
 
 use Text::ANSITable;
 
-our $VERSION = '0.03'; # VERSION
+our $VERSION = '0.04'; # VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -17,7 +17,7 @@ $t->columns(['name', 'module', 'summary']);
 for my $name (sort keys %$all_ct) {
     my $ct = $all_ct->{$name};
     $t->add_row([$name, $ct->{module}, $ct->{summary}],
-                {bgcolor=>($ARGV[0] && $ARGV[0] eq $name ? '222200' : undef)});
+                {fgcolor=>($ARGV[0] && $ARGV[0] eq $name ? 'aaaa00' : undef)});
 }
 
 say "Tip: you can run me with color theme name as argument to try it out.";
@@ -53,7 +53,7 @@ ansitable-list-color-themes - Display a list of known color themes
 
 =head1 VERSION
 
-version 0.03
+version 0.04
 
 =head1 AUTHOR
 

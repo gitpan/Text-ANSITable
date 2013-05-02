@@ -6,7 +6,7 @@ use warnings;
 
 use Text::ANSITable;
 
-our $VERSION = '0.03'; # VERSION
+our $VERSION = '0.04'; # VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -24,7 +24,7 @@ for my $name (sort {($all_bs->{$a}{utf8} ? 1:0)<=>($all_bs->{$b}{utf8} ? 1:0) ||
     my $bs = $all_bs->{$name};
     $t->add_row(
         [$name, $bs->{module}, $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0],
-        {bgcolor=>$name eq $t->border_style->{name} ? '222200' : undef});
+        {fgcolor=>$name eq $t->border_style->{name} ? "aaaa00" : undef});
 
     if (!$utf8 && $bs->{utf8}) {
         $t->add_row_separator;
@@ -51,7 +51,7 @@ ansitable-list-border-styles - Display a list of known border styles
 
 =head1 VERSION
 
-version 0.03
+version 0.04
 
 =head1 AUTHOR
 

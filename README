@@ -3,7 +3,7 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.03
+    version 0.04
 
 SYNOPSIS
      use 5.010;
@@ -624,6 +624,10 @@ FAQ
     "border2" theme arguments:
 
      $t->color_theme_args({border1=>'ff0000', border2=>'00ff00'}); # red to green
+
+   I'm using terminal emulator with white background, the texts are not very visible!
+    Try using the "*_whitebg" themes, as the other themes are geared towards
+    terminal emulators with black background.
 
 TODO/BUGS
     Attributes: header_{pad,lpad,rpad,align,wrap}

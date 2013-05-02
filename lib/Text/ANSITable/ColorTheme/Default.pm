@@ -7,7 +7,7 @@ use warnings;
 use Data::Clone;
 use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
 
-our $VERSION = '0.03'; # VERSION
+our $VERSION = '0.04'; # VERSION
 
 our %color_themes = (
 
@@ -26,7 +26,7 @@ our %color_themes = (
 
     #default_256 => {
     default_gradation => {
-        summary => 'Default for 256-color+ terminal (black background)',
+        summary => 'Default (for terminal with black background)',
         description => <<'_',
 
 Border color has gradation from top to bottom. Accept arguments C<border1> and
@@ -41,8 +41,8 @@ _
 
                 my $pct = ($self->{_draw}{y}+1) / $self->{_draw}{table_height};
 
-                my $rgbf1 = $self->{color_theme_args}{border1} // 'ffffff';
-                my $rgbf2 = $self->{color_theme_args}{border2} // '444444';
+                my $rgbf1 = $self->{color_theme_args}{border1} // $self->{color_theme}{data}{default_border1} // 'ffffff';
+                my $rgbf2 = $self->{color_theme_args}{border2} // $self->{color_theme}{data}{default_border2} // '444444';
                 my $rgbf  = mix_2_rgb_colors($rgbf1, $rgbf2, $pct);
 
                 my $rgbb1 = $self->{color_theme_args}{border1_bg};
@@ -56,14 +56,14 @@ _
                 [$rgbf, $rgbb];
             },
 
-            header      => "\e[1m",
-            header_bg   => '202020',
+            header      => '808080', # "\e[1m" or "\e[1;7m" currently doesn't work, why?
+            header_bg   => undef,
             cell        => undef,
             cell_bg     => undef,
 
             num_data    => '66ffff',
             str_data    => undef,
-            date_data   => 'cccc00',
+            date_data   => 'aaaa00',
             bool_data   => sub {
                 my ($self, %args) = @_;
 
@@ -79,6 +79,7 @@ $ng->{colors}{border} = '666666';
 $color_themes{default_nogradation} = $ng;
 
 my $dgw = clone($color_themes{default_gradation});
+$dgw->{summary} = 'Default (for terminal with white background)';
 $dgw->{colors}{header_bg} = 'cccccc';
 $dgw->{data}{default_border1} = '000000';
 $dgw->{data}{default_border2} = 'cccccc';
@@ -106,7 +107,7 @@ Text::ANSITable::ColorTheme::Default - Default color themes
 
 =head1 VERSION
 
-version 0.03
+version 0.04
 
 =head1 AUTHOR
 
@@ -130,7 +131,7 @@ None are exported by default, but they are exportable.
 
 =over
 
-=item * default_gradation (Default for 256-color+ terminal (black background))
+=item * default_gradation (Default (for terminal with black background))
 
 
 Border color has gradation from top to bottom. Accept arguments C<border1> and
@@ -140,7 +141,7 @@ C<border2_bg> to set background RGB colors.
 
 
 
-=item * default_gradation_whitebg (Default for 256-color+ terminal (black background))
+=item * default_gradation_whitebg (Default (for terminal with white background))
 
 
 Border color has gradation from top to bottom. Accept arguments C<border1> and
@@ -150,7 +151,7 @@ C<border2_bg> to set background RGB colors.
 
 
 
-=item * default_nogradation (Default for 256-color+ terminal (black background))
+=item * default_nogradation (Default (for terminal with black background))
 
 
 Border color has gradation from top to bottom. Accept arguments C<border1> and
