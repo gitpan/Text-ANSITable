@@ -5,7 +5,7 @@ use strict;
 use utf8;
 use warnings;
 
-our $VERSION = '0.04'; # VERSION
+our $VERSION = '0.05'; # VERSION
 
 our %border_styles = (
 
@@ -98,9 +98,9 @@ our %border_styles = (
         chars => [
             ['.','-','+','.'], # 0
             ['|','|','|'],     # 1
-            ['+','-','+','|'], # 2
+            ['+','-','+','+'], # 2
             ['|','|','|'],     # 3
-            ['+','-','+','|'], # 4
+            ['+','-','+','+'], # 4
             ['`','-','+',"'"], # 5
         ],
     },
@@ -400,7 +400,7 @@ Text::ANSITable::BorderStyle::Default - Default border styles
 
 =head1 VERSION
 
-version 0.04
+version 0.05
 
 =head1 AUTHOR
 

@@ -7,7 +7,7 @@ use warnings;
 use Data::Clone;
 use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
 
-our $VERSION = '0.04'; # VERSION
+our $VERSION = '0.05'; # VERSION
 
 our %color_themes = (
 
@@ -76,6 +76,7 @@ _
 
 my $ng = clone($color_themes{default_gradation});
 $ng->{colors}{border} = '666666';
+delete $ng->{description};
 $color_themes{default_nogradation} = $ng;
 
 my $dgw = clone($color_themes{default_gradation});
@@ -107,7 +108,7 @@ Text::ANSITable::ColorTheme::Default - Default color themes
 
 =head1 VERSION
 
-version 0.04
+version 0.05
 
 =head1 AUTHOR
 
@@ -152,14 +153,6 @@ C<border2_bg> to set background RGB colors.
 
 
 =item * default_nogradation (Default (for terminal with black background))
-
-
-Border color has gradation from top to bottom. Accept arguments C<border1> and
-C<border2> to set first (top) and second (bottom) foreground RGB colors. Colors
-will fade from the top color to bottom color. Also accept C<border1_bg> and
-C<border2_bg> to set background RGB colors.
-
-
 
 =item * no_color (Special theme that means no color)
 

@@ -16,7 +16,7 @@ use Color::ANSI::Util qw(ansi16fg ansi16bg
 use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets);
 
-our $VERSION = '0.04'; # VERSION
+our $VERSION = '0.05'; # VERSION
 
 has use_color => (
     is      => 'rw',
@@ -880,11 +880,10 @@ sub _get_cell_lines {
     my $pad = $align =~ /^[Ll]/o ? "right" :
         ($align =~ /^[Rr]/o ? "left" : "center");
 
-    @lines = ta_add_color_resets(@lines);
     for (@lines) {
         $_ = (" "x$lpad) . ta_mbpad($_, $width, $pad, " ", 1) . (" "x$rpad);
         # add default color
-        s/\e\[0m(?=.)/\e[0m$color/g;
+        s/\e\[0m(?=.)/\e[0m$color/g if length($color);
         $_ = $color . $_;
     }
 
@@ -1159,7 +1158,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.04
+version 0.05
 
 =head1 SYNOPSIS
 
