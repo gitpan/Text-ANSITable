@@ -3,7 +3,7 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.02
+    version 0.03
 
 SYNOPSIS
      use 5.010;
@@ -61,11 +61,13 @@ BORDER STYLES
      say $_ for $t->list_border_styles;
 
     Or you can also try out borders using the provided
-    ansitable-list-border-styles script.
+    ansitable-list-border-styles script. Or, you can also view the
+    documentation for the "Text::ANSITable::BorderStyle::*" modules, where
+    border styles are searched.
 
-    Border styles are searched in "Text::ANSITable::BorderStyle::*" modules
-    (asciibetically), in the %border_styles variable. Hash keys are border
-    style names, hash values are border style specifications.
+    Border styles are searched in the %border_styles variable in each
+    searched package. Hash keys are border style names, hash values are
+    border style specifications.
 
     To choose border style, either set the "border_style" attribute to an
     available border style or a border specification directly.
@@ -117,16 +119,18 @@ COLOR THEMES
 
      say $_ for $t->list_color_themes;
 
-    Or you can also run the provided ansitable-list-color-themes script.
+    Or you can also run the provided ansitable-list-color-themes script. Or
+    you can view the documentation for the "Text::ANSITable::ColorTheme::*"
+    modules where color themes are searched.
 
-    Color themes are searched in "Text::ANSITable::ColorTheme::*" modules
-    (asciibetically), in the %color_themes variable. Hash keys are color
-    theme names, hash values are color theme specifications.
+    Color themes are searched in the %color_themes variable in each searched
+    package. Hash keys are color theme names, hash values are color theme
+    specifications.
 
     To choose a color theme, either set the "color_theme" attribute to an
     available color theme or a border specification directly.
 
-     $t->color_theme("default_256");
+     $t->color_theme("default_nogradation");
      $t->color_theme("foo");    # dies, no such color theme
      $t->color_theme({ ... });  # set specification directly
 
@@ -139,7 +143,7 @@ COLOR THEMES
     can specify name using "Subpackage::Name" syntax, e.g.:
 
      # will only search in Text::ANSITable::ColorTheme::Default
-     $t->color_theme("Default::default_256");
+     $t->color_theme("Default::default_nogradation");
 
     To create a new color theme, create a module under
     "Text::ANSITable::ColorTheme::". Please see one of the existing color
@@ -153,21 +157,38 @@ COLOR THEMES
     For flexibility, color can also be a coderef which should produce a
     color value. This allows you to do, e.g. gradation border color, random
     color, etc (see Text::ANSITable::ColorTheme::Demo). Code will be called
-    with ($self, %args) where %args contains various information, like
+    with "($self, %args)" where %args contains various information, like
     "name" (the item name being requested). You can get the row position
     from "$self->{_draw}{y}".
 
 COLUMN WIDTHS
     By default column width is set just so it is enough to show the widest
-    data. Also by default terminal width is respected, so columns are shrunk
-    proportionally to fit terminal width.
+    data. This can be customized in the following ways (in order of
+    precedence, from lowest):
 
-    You can set certain column's width using the "column_style()" method,
-    e.g.:
+    *   Setting "column_width" attribute
 
-     $t->column_style('colname', width => 20);
+        This sets width for all columns.
 
-    You can also use negative number here to mean *minimum* width.
+    *   Setting per-column width using "column_style()" method
+
+         $t->column_style('colname', width => 20);
+
+    You can use negative number to mean *minimum* width.
+
+ROW HEIGHTS
+    This can be customized in the following ways (in order of precedence,
+    from lowest):
+
+    *   Setting "row_height" attribute
+
+        This sets height for all rows.
+
+    *   Setting per-row height using "row_style()" method
+
+         $t->row_style(1, height => 2);
+
+    You can use negative number to mean *minimum* height.
 
 CELL (HORIZONTAL) PADDING
     By default cell (horizontal) padding is 1. This can be customized in the
@@ -190,7 +211,7 @@ CELL (HORIZONTAL) PADDING
     *   Setting per-column left/right padding using "column_style()" method
 
          $t->column_style('colname', lpad => 0);
-         $t->column_style('colname', lpad => 1);
+         $t->column_style('colname', rpad => 1);
 
 COLUMN VERTICAL PADDING
     Default vertical padding is 0. This can be changed in the following ways
@@ -200,7 +221,7 @@ COLUMN VERTICAL PADDING
 
         This sets top and bottom padding.
 
-    *   Setting "row_tpad"/<row_bpad> attribute
+    *   Setting "row_tpad"/"row_bpad" attribute
 
         They set top/bottom padding separately.
 
@@ -229,9 +250,10 @@ COLUMN VERTICAL PADDING
 
 CELL COLORS
     By default data format colors are used, e.g. cyan/green for text (using
-    the default color scheme). In absense of that, default_fgcolor and
-    default_bgcolor from the color scheme are used. You can customize colors
-    in the following ways (ordered by precedence, from lowest):
+    the default color scheme, items "num_data", "bool_data", etc). In
+    absense of that, "cell_fgcolor" and "cell_bgcolor" from the color scheme
+    are used. You can customize colors in the following ways (ordered by
+    precedence, from lowest):
 
     *   "cell_fgcolor" and "cell_bgcolor" attributes
 
@@ -267,6 +289,8 @@ CELL COLORS
          $t->cell_style($rownum, $colname, fgcolor => 'fa8888');
          $t->cell_style($rownum, $colname, bgcolor => '202020');
 
+    For flexibility, all colors can be specified as coderef.
+
 CELL (HORIZONTAL AND VERTICAL) ALIGNMENT
     By default colors are added according to data formats, e.g. right align
     for numbers, left for strings, and middle for bools. To customize it,
@@ -284,21 +308,15 @@ CELL (HORIZONTAL AND VERTICAL) ALIGNMENT
          $t->cell_style($rownum, $colname, align  => 'middle');
          $t->cell_style($rownum, $colname, valign => 'top');
 
-COLUMN WRAPPING
-    By default column wrapping is turned on. You can set it on/off via the
-    "column_wrap" attribute or per-column "wrap" style.
-
-    Note that cell content past the column width will be clipped/truncated.
-
 CELL FORMATS
-    The formats settings regulates how the data is formatted. The value for
-    this setting will be passed to Data::Unixish::Apply's apply(), as the
-    "functions" argument. So it should be a single string (like "date") or
-    an array (like "['date', ['centerpad', {width=>20}]]").
+    The "formats" settings regulates how the data is formatted. The value
+    for this setting will be passed to Data::Unixish::Apply's "apply()", as
+    the "functions" argument. So it should be a single string (like "date")
+    or an array (like "['date', ['centerpad', {width=>20}]]").
 
     See Data::Unixish or install App::dux and then run "dux -l" to see what
     functions are available. Functions of interest to formatting data
-    include: bool, num, sprintf, sprintfn, wrap, (among others).
+    include: "bool", "num", "sprintf", "sprintfn", "wrap", (among others).
 
 ATTRIBUTES
   rows => ARRAY OF ARRAY OF STR
@@ -309,7 +327,7 @@ ATTRIBUTES
 
   row_filter => CODE|ARRAY OF INT
     When drawing, only show rows that match this. Can be a coderef which
-    will receive ($row, $i) and should return bool (true means show this
+    will receive "($row, $i)" and should return bool (true means show this
     row). Or, can be an array which contains indices of rows that should be
     shown (e.g. "[0, 1, 3, 4]").
 
@@ -349,8 +367,8 @@ ATTRIBUTES
     characters will result in an exception.
 
     (In the future, setting "use_utf8" to 0 might opt the module to use the
-    non-"mb_*" version of functions from Text::ANSI::Util, e.g. ta_wrap()
-    instead of ta_mbwrap(), and so on).
+    non-"mb_*" version of functions from Text::ANSI::Util, e.g. "ta_wrap()"
+    instead of "ta_mbwrap()", and so on).
 
   border_style => HASH
     Border style specification to use.
@@ -386,11 +404,14 @@ ATTRIBUTES
 
   column_lpad => INT
     Set left padding for all columns. Overrides the "column_pad" attribute.
-    Can be overriden by per-column <lpad> style.
+    Can be overriden by per-column "lpad" style.
 
   column_rpad => INT
     Set right padding for all columns. Overrides the "column_pad" attribute.
-    Can be overriden by per-column <rpad> style.
+    Can be overriden by per-column "rpad" style.
+
+  column_width => INT
+    Set width for all columns. Can be overriden by per-column "width" style.
 
   row_vpad => INT
     Set vertical padding for all rows. Can be overriden by per-row "vpad"
@@ -398,13 +419,16 @@ ATTRIBUTES
 
   row_tpad => INT
     Set top padding for all rows. Overrides the "row_vpad" attribute. Can be
-    overriden by per-row <tpad> style.
+    overriden by per-row "tpad" style.
 
   row_bpad => INT
     Set bottom padding for all rows. Overrides the "row_vpad" attribute. Can
-    be overriden by per-row <bpad> style.
+    be overriden by per-row "bpad" style.
 
   row_valign => STR
+  row_height => INT
+    Set height for all rows. Can be overriden by per-row "height" style.
+
   cell_fgcolor => RGB|CODE
     Set foreground color for all cells. Value should be 6-hexdigit RGB. Can
     also be a coderef that will receive %args (e.g. row_idx, col_name,
@@ -511,6 +535,7 @@ FAQ
     Or, try not using boxchar border styles, use the utf8 or ascii version.
     Try not using colors.
 
+  Formatting data
    How do I format data?
     Use the "formats" per-column style or per-cell style. For example:
 
@@ -521,6 +546,20 @@ FAQ
 
     See Data::Unixish::Apply and Data::Unixish for more details on the
     available formatting functions.
+
+   How do I wrap long text?
+    The "wrap" dux function can be used to wrap text (see:
+    Data::Unixish::wrap). You'll want to set "ansi" and "mb" both to 1 to
+    handle ANSI escape codes and wide characters in your text (unless you
+    are sure that your text does not contain those):
+
+     $t->column_style('description', formats=>[[wrap => {width=>60, ansi=>1, mb=>1}]]);
+
+   How do I highlight text with color?
+    The "ansi::highlight" dux function can be used to highlight text (see:
+    Data::Unixish::ansi::highlight).
+
+     $t->column_style(2, formats => [[highlight => {pattern=>$pat}]]);
 
   Border
    I'm getting 'Wide character in print' error message when I use utf8 border styles!
@@ -559,6 +598,9 @@ FAQ
   Color
    How to disable colors?
     Set "use_color" attribute or "COLOR" environment to 0.
+
+   How to specify colors using names (e.g. red, 'navy blue') instead of RGB?
+    Use modules like Graphics::ColorNames.
 
    I'm not seeing colors when output is piped (e.g. to a pager)!
     The default is to disable colors when (-t STDOUT) is false. You can

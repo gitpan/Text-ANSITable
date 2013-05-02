@@ -16,7 +16,7 @@ use Color::ANSI::Util qw(ansi16fg ansi16bg
 use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets);
 
-our $VERSION = '0.02'; # VERSION
+our $VERSION = '0.03'; # VERSION
 
 has use_color => (
     is      => 'rw',
@@ -92,6 +92,9 @@ has column_lpad => (
 has column_rpad => (
     is      => 'rw',
 );
+has row_height => (
+    is      => 'rw',
+);
 has row_vpad => (
     is      => 'rw',
     default => sub { 0 },
@@ -153,11 +156,11 @@ sub BUILD {
         if (defined $ENV{ANSITABLE_BORDER_STYLE}) {
             $bs = $ENV{ANSITABLE_BORDER_STYLE};
         } elsif ($self->{use_utf8}) {
-            $bs = 'bricko';
+            $bs = 'Default::bricko';
         } elsif ($self->{use_box_chars}) {
-            $bs = 'single_boxchar';
+            $bs = 'Default::single_boxchar';
         } else {
-            $bs = 'single_ascii';
+            $bs = 'Default::single_ascii';
         }
         $self->border_style($bs);
     }
@@ -169,12 +172,12 @@ sub BUILD {
             $ct = $ENV{ANSITABLE_COLOR_THEME};
         } elsif ($self->{use_color}) {
             if ($self->{color_depth} >= 2**24) {
-                $ct = 'default_gradation';
+                $ct = 'Default::default_gradation';
             } else {
-                $ct = 'default_nogradation';
+                $ct = 'Default::default_nogradation';
             }
         } else {
-            $ct = 'no_color';
+            $ct = 'Default::no_color';
         }
         $self->color_theme($ct);
     }
@@ -276,6 +279,25 @@ sub border_style {
     $self->{border_style} = $bs;
 }
 
+sub get_color_theme {
+    my ($self, $ct) = @_;
+
+    my $cts;
+    my $pkg;
+    if ($ct =~ s/(.+):://) {
+        $pkg = $1;
+        my $pkgp = $pkg; $pkgp =~ s!::!/!g;
+        require "Text/ANSITable/ColorTheme/$pkgp.pm";
+        no strict 'refs';
+        $cts = \%{"Text::ANSITable::ColorTheme::$pkg\::color_themes"};
+    } else {
+        $cts = $self->list_color_themes(1);
+    }
+    $cts->{$ct} or die "Unknown color theme name '$ct'".
+        ($pkg ? " in package Text::ANSITable::ColorTheme::$pkg" : "");
+    $ct = $cts->{$ct};
+}
+
 sub color_theme {
     my $self = shift;
 
@@ -285,20 +307,7 @@ sub color_theme {
     my $p2;
     if (!ref($ct)) {
         $p2 = " named $ct";
-        my $cts;
-        my $pkg;
-        if ($ct =~ s/(.+):://) {
-            $pkg = $1;
-            my $pkgp = $pkg; $pkgp =~ s!::!/!g;
-            require "Text/ANSITable/ColorTheme/$pkgp.pm";
-            no strict 'refs';
-            $cts = \%{"Text::ANSITable::ColorTheme::$pkg\::color_themes"};
-        } else {
-            $cts = $self->list_color_themes(1);
-        }
-        $cts->{$ct} or die "Unknown color theme name '$ct'".
-            ($pkg ? " in package Text::ANSITable::ColorTheme::$pkg" : "");
-        $ct = $cts->{$ct};
+        $ct = $self->get_color_theme($ct);
     }
 
     my $err;
@@ -427,21 +436,28 @@ sub _detect_column_types {
     my $fcol_detect = [];
     my %seen;
     for my $i (0..@$cols-1) {
+        my $col = $cols->[$i];
         my $res = {};
         $fcol_detect->[$i] = $res;
 
         # optim: skip detecting columns we're not showing
-        next unless $cols->[$i] ~~ $self->{_draw}{fcols};
+        next unless $col ~~ $self->{_draw}{fcols};
 
         # but detect from all rows, not just ones we're showing
       DETECT:
         {
-            if ($cols->[$i] =~ /\?/) {
+            if ($col =~ /\?/) {
                 $res->{type}    = 'bool';
                 $res->{align}   = 'center';
                 $res->{valign}  = 'center';
                 $res->{fgcolor} = $ct->{colors}{bool_data};
                 $res->{formats} = [[bool => {style => $self->{use_utf8} ? "check_cross" : "Y_N"}]];
+                last DETECT;
+            } elsif ($col =~ /date\b|\b[acmsu]?time\b/i) {
+                $res->{type}    = 'date';
+                $res->{align}   = 'right';
+                $res->{fgcolor} = $ct->{colors}{date_data};
+                $res->{formats} = [['date' => {}]];
                 last DETECT;
             }
 
@@ -452,14 +468,15 @@ sub _detect_column_types {
                 do { $pass=0; last } unless looks_like_number($v);
             }
             if ($pass) {
-                $res->{type}    = 'num';
                 $res->{align}   = 'right';
+                $res->{type}    = 'num';
                 $res->{fgcolor} = $ct->{colors}{num_data};
+                if ($col =~ /(pct|percent(?:age))\b|\%/) {
+                    $res->{formats} = [[num => {style=>'percent'}]];
+                } else {
+                }
                 last DETECT;
             }
-
-            # XXX percent (from col /pct|percent|%/
-            # XXX date (unix timestamp / DateTime)
 
             $res->{type}    = 'str';
             $res->{fgcolor} = $ct->{colors}{str_data};
@@ -577,6 +594,9 @@ sub _prepare_draw {
                     unless $res->[0] == 200;
                 $res = $res->[2];
                 for (0..@$frows-1) { $frows->[$_][$i] = $res->[$_] // "" }
+            } else {
+                # change null to ''
+                for (0..@$frows-1) { $frows->[$_][$i] //= "" }
             }
             $fcol_lpads->[$i] = $self->column_style($i, 'lpad') //
                 $self->column_style($i, 'pad') // $lpad;
@@ -591,6 +611,8 @@ sub _prepare_draw {
     my $frow_heights  = []; # index = [frowidx]
     #my $fcell_heights = []; # index = [frowidx][colnum]
     {
+        my $height = $self->{row_height};
+        my $width  = $self->{column_width};
         my $tpad = $self->{row_tpad} // $self->{row_vpad}; # tbl-lvl tpad
         my $bpad = $self->{row_bpad} // $self->{row_vpad}; # tbl-lvl bpad
         my $cswidths  = [map {$self->column_style($_, 'width')} 0..@$cols-1];
@@ -613,7 +635,7 @@ sub _prepare_draw {
                     );
                     die "Can't format cell ($origi, $cols->[$j]): ".
                         "$res->[0] - $res->[1]" unless $res->[0] == 200;
-                    $frows->[$i][$j] = $res->[2][0];
+                    $frows->[$i][$j] = $res->[2][0] // "";
                 }
 
                 # calculate heights/widths of data
@@ -623,12 +645,20 @@ sub _prepare_draw {
                 $val = $wh->[1];
                 if (defined $rsheight) {
                     if ($rsheight < 0) {
-                        # widen to minimum height
+                        # heighten to minimum height
                         $val = -$rsheight if $val < -$rsheight;
                     } else {
                         $val =  $rsheight if $val <  $rsheight;
                     }
+                } elsif (defined $height) {
+                    if ($height < 0) {
+                        # heighten to minimum height
+                        $val = -$height if $val < -$height;
+                    } else {
+                        $val =  $height if $val <  $height;
+                    }
                 }
+
                 $frow_heights->[$i] = $val if !defined($frow_heights->[$i]) ||
                     $frow_heights->[$i] < $val;
 
@@ -639,6 +669,13 @@ sub _prepare_draw {
                         $val = -$cswidths->[$j] if $val < -$cswidths->[$j];
                     } else {
                         $val =  $cswidths->[$j] if $val <  $cswidths->[$j];
+                    }
+                } elsif (defined $width) {
+                    if ($width < 0) {
+                        # widen to minimum width
+                        $val = -$width if $val < -$width;
+                    } else {
+                        $val =  $width if $val <  $width;
                     }
                 }
                 $fcol_widths->[$j] = $val if $fcol_widths->[$j] < $val;
@@ -717,36 +754,34 @@ sub get_border_char {
 sub color2ansi {
     my ($self, $c, $args, $is_bg) = @_;
 
-    # already ansi, skip
-
     $args //= {};
-
     if (ref($c) eq 'CODE') {
         $c = $c->($self, %$args);
     }
 
-    unless (index($c, "\e[") >= 0) {
-        if ($self->{color_depth} >= 2**24) {
-            if (ref($c) eq 'ARRAY') {
-                $c = (defined($c->[0]) ? ansi24bfg($c->[0]) : "") .
-                    (defined($c->[1]) ? ansi24bbg($c->[1]) : "");
-            } else {
-                $c = $is_bg ? ansi24bbg($c) : ansi24bfg($c);
-            }
-        } elsif ($self->{color_depth} >= 256) {
-            if (ref($c) eq 'ARRAY') {
-                $c = (defined($c->[0]) ? ansi256fg($c->[0]) : "") .
-                    (defined($c->[1]) ? ansi256bg($c->[1]) : "");
-            } else {
-                $c = $is_bg ? ansi256bg($c) : ansi256fg($c);
-            }
+    # empty or already ansi? skip
+    return '' if !defined($c) || !length($c) || index($c, "\e[") >= 0;
+
+    if ($self->{color_depth} >= 2**24) {
+        if (ref($c) eq 'ARRAY') {
+            $c = (defined($c->[0]) ? ansi24bfg($c->[0]) : "") .
+                (defined($c->[1]) ? ansi24bbg($c->[1]) : "");
         } else {
-            if (ref($c) eq 'ARRAY') {
-                $c = (defined($c->[0]) ? ansi16fg($c->[0]) : "") .
-                    (defined($c->[1]) ? ansi16bg($c->[1]) : "");
-            } else {
-                $c = $is_bg ? ansi16bg($c) : ansi16fg($c);
-            }
+            $c = $is_bg ? ansi24bbg($c) : ansi24bfg($c);
+        }
+    } elsif ($self->{color_depth} >= 256) {
+        if (ref($c) eq 'ARRAY') {
+            $c = (defined($c->[0]) ? ansi256fg($c->[0]) : "") .
+                (defined($c->[1]) ? ansi256bg($c->[1]) : "");
+        } else {
+            $c = $is_bg ? ansi256bg($c) : ansi256fg($c);
+        }
+    } else {
+        if (ref($c) eq 'ARRAY') {
+            $c = (defined($c->[0]) ? ansi16fg($c->[0]) : "") .
+                (defined($c->[1]) ? ansi16bg($c->[1]) : "");
+        } else {
+            $c = $is_bg ? ansi16bg($c) : ansi16fg($c);
         }
     }
     $c;
@@ -1124,7 +1159,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.02
+version 0.03
 
 =head1 SYNOPSIS
 
@@ -1180,7 +1215,7 @@ fine-grained options to customize appearance.
 
 It uses L<Moo> object system.
 
-=for Pod::Coverage ^(BUILD|draw_.+|color2ansi|get_color_reset|get_theme_color|get_border_char)$
+=for Pod::Coverage ^(BUILD|get_color_theme|get_border_style|draw_.+|color2ansi|get_color_reset|get_theme_color|get_border_char)$
 
 =head1 BORDER STYLES
 
@@ -1189,11 +1224,13 @@ To list available border styles:
  say $_ for $t->list_border_styles;
 
 Or you can also try out borders using the provided
-B<ansitable-list-border-styles> script.
+B<ansitable-list-border-styles> script. Or, you can also view the documentation
+for the C<Text::ANSITable::BorderStyle::*> modules, where border styles are
+searched.
 
-Border styles are searched in C<Text::ANSITable::BorderStyle::*> modules
-(asciibetically), in the C<%border_styles> variable. Hash keys are border style
-names, hash values are border style specifications.
+Border styles are searched in the C<%border_styles> variable in each searched
+package. Hash keys are border style names, hash values are border style
+specifications.
 
 To choose border style, either set the C<border_style> attribute to an available
 border style or a border specification directly.
@@ -1246,16 +1283,18 @@ To list available color themes:
 
  say $_ for $t->list_color_themes;
 
-Or you can also run the provided B<ansitable-list-color-themes> script.
+Or you can also run the provided B<ansitable-list-color-themes> script. Or you
+can view the documentation for the C<Text::ANSITable::ColorTheme::*> modules
+where color themes are searched.
 
-Color themes are searched in C<Text::ANSITable::ColorTheme::*> modules
-(asciibetically), in the C<%color_themes> variable. Hash keys are color theme
-names, hash values are color theme specifications.
+Color themes are searched in the C<%color_themes> variable in each searched
+package. Hash keys are color theme names, hash values are color theme
+specifications.
 
 To choose a color theme, either set the C<color_theme> attribute to an available
 color theme or a border specification directly.
 
- $t->color_theme("default_256");
+ $t->color_theme("default_nogradation");
  $t->color_theme("foo");    # dies, no such color theme
  $t->color_theme({ ... });  # set specification directly
 
@@ -1267,33 +1306,61 @@ add some overhead. To avoid searching in all modules, you can specify name using
 C<Subpackage::Name> syntax, e.g.:
 
  # will only search in Text::ANSITable::ColorTheme::Default
- $t->color_theme("Default::default_256");
+ $t->color_theme("Default::default_nogradation");
 
 To create a new color theme, create a module under
 C<Text::ANSITable::ColorTheme::>. Please see one of the existing color theme
 modules for example, like L<Text::ANSITable::ColorTheme::Default>. Color for
 items must be specified as 6-hexdigit RGB value (like C<ff0088>) or ANSI escape
-codes (e.g. "\e[31;1m" for bold red foregound color, or "\e[48;5;226m" for lemon
-yellow background color). You can also return a 2-element array containing RGB
-value for foreground and background, respectively.
+codes (e.g. C<"\e[31;1m"> for bold red foregound color, or C<"\e[48;5;226m"> for
+lemon yellow background color). You can also return a 2-element array containing
+RGB value for foreground and background, respectively.
 
 For flexibility, color can also be a coderef which should produce a color value.
 This allows you to do, e.g. gradation border color, random color, etc (see
-L<Text::ANSITable::ColorTheme::Demo>). Code will be called with ($self, %args)
-where %args contains various information, like C<name> (the item name being
-requested). You can get the row position from C<< $self->{_draw}{y} >>.
+L<Text::ANSITable::ColorTheme::Demo>). Code will be called with C<< ($self,
+%args) >> where C<%args> contains various information, like C<name> (the item
+name being requested). You can get the row position from C<< $self->{_draw}{y}
+>>.
 
 =head1 COLUMN WIDTHS
 
 By default column width is set just so it is enough to show the widest data.
-Also by default terminal width is respected, so columns are shrunk
-proportionally to fit terminal width.
+This can be customized in the following ways (in order of precedence, from
+lowest):
 
-You can set certain column's width using the C<column_style()> method, e.g.:
+=over
+
+=item * Setting C<column_width> attribute
+
+This sets width for all columns.
+
+=item * Setting per-column width using C<column_style()> method
 
  $t->column_style('colname', width => 20);
 
-You can also use negative number here to mean I<minimum> width.
+=back
+
+You can use negative number to mean I<minimum> width.
+
+=head1 ROW HEIGHTS
+
+This can be customized in the following ways (in order of precedence, from
+lowest):
+
+=over
+
+=item * Setting C<row_height> attribute
+
+This sets height for all rows.
+
+=item * Setting per-row height using C<row_style()> method
+
+ $t->row_style(1, height => 2);
+
+=back
+
+You can use negative number to mean I<minimum> height.
 
 =head1 CELL (HORIZONTAL) PADDING
 
@@ -1319,7 +1386,7 @@ Example:
 =item * Setting per-column left/right padding using C<column_style()> method
 
  $t->column_style('colname', lpad => 0);
- $t->column_style('colname', lpad => 1);
+ $t->column_style('colname', rpad => 1);
 
 =back
 
@@ -1334,7 +1401,7 @@ order of precedence, from lowest):
 
 This sets top and bottom padding.
 
-=item * Setting C<row_tpad>/<row_bpad> attribute
+=item * Setting C<row_tpad>/C<row_bpad> attribute
 
 They set top/bottom padding separately.
 
@@ -1364,9 +1431,9 @@ When adding row:
 =head1 CELL COLORS
 
 By default data format colors are used, e.g. cyan/green for text (using the
-default color scheme). In absense of that, default_fgcolor and default_bgcolor
-from the color scheme are used. You can customize colors in the following ways
-(ordered by precedence, from lowest):
+default color scheme, items C<num_data>, C<bool_data>, etc). In absense of that,
+C<cell_fgcolor> and C<cell_bgcolor> from the color scheme are used. You can
+customize colors in the following ways (ordered by precedence, from lowest):
 
 =over
 
@@ -1406,6 +1473,8 @@ Example:
 
 =back
 
+For flexibility, all colors can be specified as coderef.
+
 =head1 CELL (HORIZONTAL AND VERTICAL) ALIGNMENT
 
 By default colors are added according to data formats, e.g. right align for
@@ -1428,23 +1497,16 @@ Example:
 
 =back
 
-=head1 COLUMN WRAPPING
-
-By default column wrapping is turned on. You can set it on/off via the
-C<column_wrap> attribute or per-column C<wrap> style.
-
-Note that cell content past the column width will be clipped/truncated.
-
 =head1 CELL FORMATS
 
-The formats settings regulates how the data is formatted. The value for this
-setting will be passed to L<Data::Unixish::Apply>'s apply(), as the C<functions>
-argument. So it should be a single string (like C<date>) or an array (like C<<
-['date', ['centerpad', {width=>20}]] >>).
+The C<formats> settings regulates how the data is formatted. The value for this
+setting will be passed to L<Data::Unixish::Apply>'s C<apply()>, as the
+C<functions> argument. So it should be a single string (like C<date>) or an
+array (like C<< ['date', ['centerpad', {width=>20}]] >>).
 
 See L<Data::Unixish> or install L<App::dux> and then run C<dux -l> to see what
-functions are available. Functions of interest to formatting data include: bool,
-num, sprintf, sprintfn, wrap, (among others).
+functions are available. Functions of interest to formatting data include:
+C<bool>, C<num>, C<sprintf>, C<sprintfn>, C<wrap>, (among others).
 
 =head1 ATTRIBUTES
 
@@ -1459,9 +1521,9 @@ Store column names.
 =head2 row_filter => CODE|ARRAY OF INT
 
 When drawing, only show rows that match this. Can be a coderef which will
-receive ($row, $i) and should return bool (true means show this row). Or, can be
-an array which contains indices of rows that should be shown (e.g. C<< [0, 1, 3,
-4] >>).
+receive C<< ($row, $i) >> and should return bool (true means show this row). Or,
+can be an array which contains indices of rows that should be shown (e.g. C<<
+[0, 1, 3, 4] >>).
 
 =head2 column_filter => CODE|ARRAY OF STR
 
@@ -1503,8 +1565,8 @@ set to 0, an attempt to select a border style that uses Unicode characters will
 result in an exception.
 
 (In the future, setting C<use_utf8> to 0 might opt the module to use the
-non-"mb_*" version of functions from L<Text::ANSI::Util>, e.g. ta_wrap() instead
-of ta_mbwrap(), and so on).
+non-"mb_*" version of functions from L<Text::ANSI::Util>, e.g. C<ta_wrap()>
+instead of C<ta_mbwrap()>, and so on).
 
 =head2 border_style => HASH
 
@@ -1549,12 +1611,16 @@ style.
 =head2 column_lpad => INT
 
 Set left padding for all columns. Overrides the C<column_pad> attribute. Can be
-overriden by per-column <lpad> style.
+overriden by per-column C<lpad> style.
 
 =head2 column_rpad => INT
 
 Set right padding for all columns. Overrides the C<column_pad> attribute. Can be
-overriden by per-column <rpad> style.
+overriden by per-column C<rpad> style.
+
+=head2 column_width => INT
+
+Set width for all columns. Can be overriden by per-column C<width> style.
 
 =head2 row_vpad => INT
 
@@ -1563,14 +1629,18 @@ Set vertical padding for all rows. Can be overriden by per-row C<vpad> style.
 =head2 row_tpad => INT
 
 Set top padding for all rows. Overrides the C<row_vpad> attribute. Can be
-overriden by per-row <tpad> style.
+overriden by per-row C<tpad> style.
 
 =head2 row_bpad => INT
 
 Set bottom padding for all rows. Overrides the C<row_vpad> attribute. Can be
-overriden by per-row <bpad> style.
+overriden by per-row C<bpad> style.
 
 =head2 row_valign => STR
+
+=head2 row_height => INT
+
+Set height for all rows. Can be overriden by per-row C<height> style.
 
 =head2 cell_fgcolor => RGB|CODE
 
@@ -1705,6 +1775,8 @@ to display ANSI color codes raw.
 Or, try not using boxchar border styles, use the utf8 or ascii version. Try not
 using colors.
 
+=head2 Formatting data
+
 =head3 How do I format data?
 
 Use the C<formats> per-column style or per-cell style. For example:
@@ -1716,6 +1788,22 @@ Use the C<formats> per-column style or per-cell style. For example:
 
 See L<Data::Unixish::Apply> and L<Data::Unixish> for more details on the
 available formatting functions.
+
+=head3 How do I wrap long text?
+
+The C<wrap> dux function can be used to wrap text (see: L<Data::Unixish::wrap>).
+You'll want to set C<ansi> and C<mb> both to 1 to handle ANSI escape codes and
+wide characters in your text (unless you are sure that your text does not
+contain those):
+
+ $t->column_style('description', formats=>[[wrap => {width=>60, ansi=>1, mb=>1}]]);
+
+=head3 How do I highlight text with color?
+
+The C<ansi::highlight> dux function can be used to highlight text (see:
+L<Data::Unixish::ansi::highlight>).
+
+ $t->column_style(2, formats => [[highlight => {pattern=>$pat}]]);
 
 =head2 Border
 
@@ -1760,6 +1848,10 @@ whatsoever:
 =head3 How to disable colors?
 
 Set C<use_color> attribute or C<COLOR> environment to 0.
+
+=head3 How to specify colors using names (e.g. red, 'navy blue') instead of RGB?
+
+Use modules like L<Graphics::ColorNames>.
 
 =head3 I'm not seeing colors when output is piped (e.g. to a pager)!
 

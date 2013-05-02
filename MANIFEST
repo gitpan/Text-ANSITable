@@ -7,9 +7,7 @@ META.json
 META.yml
 README
 bin/ansitable-list-border-styles
-bin/ansitable-list-border-styles-using-asciitable
 bin/ansitable-list-color-themes
-bin/ansitable-list-color-themes-using-asciitable
 dist.ini
 lib/Text/ANSITable.pm
 lib/Text/ANSITable/BorderStyle/Default.pm
