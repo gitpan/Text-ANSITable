@@ -7,7 +7,7 @@ use warnings;
 use Data::Clone;
 use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
 
-our $VERSION = '0.05'; # VERSION
+our $VERSION = '0.06'; # VERSION
 
 our %color_themes = (
 
@@ -56,7 +56,7 @@ _
                 [$rgbf, $rgbb];
             },
 
-            header      => '808080', # "\e[1m" or "\e[1;7m" currently doesn't work, why?
+            header      => '808080',
             header_bg   => undef,
             cell        => undef,
             cell_bg     => undef,
@@ -108,7 +108,7 @@ Text::ANSITable::ColorTheme::Default - Default color themes
 
 =head1 VERSION
 
-version 0.05
+version 0.06
 
 =head1 AUTHOR
 

@@ -3,7 +3,7 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.05
+    version 0.06
 
 SYNOPSIS
      use 5.010;
@@ -15,8 +15,8 @@ SYNOPSIS
      my $t = Text::ANSITable->new;
 
      # set styles
-     $t->border_style('bold_utf8');  # if not, it picks a nice default for you
-     $t->color_theme('default_256'); # if not, it picks a nice default for you
+     $t->border_style('bold');  # if not, a nice default is picked
+     $t->color_theme('sepia');  # if not, a nice default is picked
 
      # fill data
      $t->columns(["name", "color", "price"]);
@@ -166,13 +166,13 @@ COLUMN WIDTHS
     data. This can be customized in the following ways (in order of
     precedence, from lowest):
 
-    *   Setting "column_width" attribute
+    *   table-level "cell_width" attribute
 
         This sets width for all columns.
 
-    *   Setting per-column width using "column_style()" method
+    *   per-column "width" style
 
-         $t->column_style('colname', width => 20);
+         $t->set_column_style('colname', width => 20);
 
     You can use negative number to mean *minimum* width.
 
@@ -180,13 +180,13 @@ ROW HEIGHTS
     This can be customized in the following ways (in order of precedence,
     from lowest):
 
-    *   Setting "row_height" attribute
+    *   table-level "cell_height" attribute
 
         This sets height for all rows.
 
-    *   Setting per-row height using "row_style()" method
+    *   per-row "height" style
 
-         $t->row_style(1, height => 2);
+         $t->set_row_style(1, height => 2);
 
     You can use negative number to mean *minimum* height.
 
@@ -194,55 +194,51 @@ CELL (HORIZONTAL) PADDING
     By default cell (horizontal) padding is 1. This can be customized in the
     following ways (in order of precedence, from lowest):
 
-    *   Setting "column_pad" attribute
+    *   table-level "cell_pad" attribute
 
         This sets left and right padding for all columns.
 
-    *   Setting "column_lpad" and "column_rpad" attributes
+    *   table-level "cell_lpad" and "cell_rpad" attributes
 
-        They set left and right padding, respectively.
+        They set left and right padding for all columns, respectively.
 
-    *   Setting per-column padding using "column_style()" method
+    *   per-column "pad" style
 
-        Example:
+         $t->set_column_style($colname, pad => 0);
 
-         $t->column_style('colname', pad => 2);
+    *   per-column "lpad"/"rpad" style
 
-    *   Setting per-column left/right padding using "column_style()" method
+         $t->set_column_style($colname, lpad => 1);
+         $t->set_column_style($colname, rpad => 2);
 
-         $t->column_style('colname', lpad => 0);
-         $t->column_style('colname', rpad => 1);
-
-COLUMN VERTICAL PADDING
+ROW VERTICAL PADDING
     Default vertical padding is 0. This can be changed in the following ways
     (in order of precedence, from lowest):
 
-    *   Setting "row_vpad" attribute
+    *   table-level "row_vpad" attribute
 
-        This sets top and bottom padding.
+        This sets top and bottom padding for all rows.
 
-    *   Setting "row_tpad"/"row_bpad" attribute
+    *   table-level "row_tpad"/"row_bpad" attributes
 
-        They set top/bottom padding separately.
+        They set top/bottom padding separately for all rows.
 
-    *   Setting per-row vertical padding using "row_style()"/add_row(s)
-        method
+    *   per-row "vpad" style
 
         Example:
 
-         $t->row_style($rownum, vpad => 1);
+         $t->set_row_style($rownum, vpad => 1);
 
         When adding row:
 
          $t->add_row($rownum, {vpad=>1});
 
-    *   Setting per-row vertical padding using "row_style()"/add_row(s)
-        method
+    *   per-row "tpad"/"vpad" style
 
         Example:
 
-         $t->row_style($rownum, tpad => 1);
-         $t->row_style($rownum, bpad => 2);
+         $t->set_row_style($row_num, tpad => 1);
+         $t->set_row_style($row_num, bpad => 2);
 
         When adding row:
 
@@ -255,7 +251,7 @@ CELL COLORS
     are used. You can customize colors in the following ways (ordered by
     precedence, from lowest):
 
-    *   "cell_fgcolor" and "cell_bgcolor" attributes
+    *   table-level "cell_fgcolor" and "cell_bgcolor" attributes
 
         Sets all cells' colors. Color should be specified using 6-hexdigit
         RGB which will be converted to the appropriate terminal color.
@@ -263,108 +259,130 @@ CELL COLORS
         Can also be set to a coderef which will receive ($rownum, $colname)
         and should return an RGB color.
 
-    *   Per-column color using "column_style()" method
+    *   per-column "fgcolor" and "bgcolor" styles
 
         Example:
 
-         $t->column_style('colname', fgcolor => 'fa8888');
-         $t->column_style('colname', bgcolor => '202020');
+         $t->set_column_style('colname', fgcolor => 'fa8888');
+         $t->set_column_style('colname', bgcolor => '202020');
 
-    *   Per-row color using "row_style()" method
+    *   per-row fgcolor and bgcolor styles
 
         Example:
 
-         $t->row_style($rownum, fgcolor => 'fa8888');
-         $t->row_style($rownum, bgcolor => '202020');
+         $t->set_row_style($rownum, {fgcolor => 'fa8888', bgcolor => '202020'});
 
         When adding row/rows:
 
          $t->add_row($row, {fgcolor=>..., bgcolor=>...});
          $t->add_rows($rows, {bgcolor=>...});
 
-    *   Per-cell color using "cell_style()" method
+    *   per-cell fgcolor and bgcolor styles
 
         Example:
 
-         $t->cell_style($rownum, $colname, fgcolor => 'fa8888');
-         $t->cell_style($rownum, $colname, bgcolor => '202020');
+         $t->set_cell_style($rownum, $colname, fgcolor => 'fa8888');
+         $t->set_cell_style($rownum, $colname, bgcolor => '202020');
 
-    For flexibility, all colors can be specified as coderef.
+    For flexibility, all colors can be specified as coderef. See "COLOR
+    THEMES" for more details.
 
 CELL (HORIZONTAL AND VERTICAL) ALIGNMENT
-    By default colors are added according to data formats, e.g. right align
-    for numbers, left for strings, and middle for bools. To customize it,
-    use the following ways (ordered by precedence, from lowest):
+    By default, numbers are right-aligned, dates and bools are centered, and
+    the other data types (text including) are left-aligned. All data are
+    top-valigned. This can be customized in the following ways (in order of
+    precedence, from lowest):
 
-    *   Setting per-column alignment using "column_style()" method
+    *   table-level "cell_align" and "cell_valign" attribute
+
+    *   per-column "align" and "valign" styles
 
         Example:
 
-         $t->column_style($colname, align  => 'middle'); # or left, or right
-         $t->column_style($colname, valign => 'top');    # or bottom, or middle
+         $t->set_column_style($colname, align  => 'middle'); # or left, or right
+         $t->set_column_style($colname, valign => 'top');    # or bottom, or middle
 
-    *   Setting per-cell alignment using "cell_style()" method
+    *   per-row "align" and "valign" styles
 
-         $t->cell_style($rownum, $colname, align  => 'middle');
-         $t->cell_style($rownum, $colname, valign => 'top');
+    *   per-cell "align" and "valign" styles
+
+         $t->set_cell_style($rownum, $colname, align  => 'middle');
+         $t->set_cell_style($rownum, $colname, valign => 'top');
 
 CELL FORMATS
-    The "formats" settings regulates how the data is formatted. The value
-    for this setting will be passed to Data::Unixish::Apply's "apply()", as
-    the "functions" argument. So it should be a single string (like "date")
-    or an array (like "['date', ['centerpad', {width=>20}]]").
+    The per-column and per-cell "formats" styles regulate how to format
+    data. The value for this style setting will be passed to
+    Data::Unixish::Apply's "apply()", as the "functions" argument. So it
+    should be a single string (like "date") or an array (like "['date',
+    ['centerpad', {width=>20}]]").
 
     See Data::Unixish or install App::dux and then run "dux -l" to see what
     functions are available. Functions of interest to formatting data
     include: "bool", "num", "sprintf", "sprintfn", "wrap", (among others).
 
 ATTRIBUTES
-  rows => ARRAY OF ARRAY OF STR
-    Store row data.
-
   columns => ARRAY OF STR
-    Store column names.
+    Store column names. Note that when drawing, you can omit some columns,
+    reorder them, or display some more than once (see "column_filter"
+    attribute).
+
+  rows => ARRAY OF ARRAY OF STR
+    Store row data. You can set this attribute directly, or add rows
+    incrementally using "add_row()" and "add_rows()" methods.
 
   row_filter => CODE|ARRAY OF INT
-    When drawing, only show rows that match this. Can be a coderef which
-    will receive "($row, $i)" and should return bool (true means show this
-    row). Or, can be an array which contains indices of rows that should be
-    shown (e.g. "[0, 1, 3, 4]").
+    When drawing, only show rows that match this. Can be an array containing
+    indices of rows which should be shown, or a coderef which will be called
+    for each row with arguments "($row, $row_num)" and should return a bool
+    value indicating whether that row should be displayed.
+
+    Internal note: During drawing, rows will be filtered and put into
+    "$t->{_draw}{frows}".
 
   column_filter => CODE|ARRAY OF STR
-    When drawing, only show columns that match this. Can be a coderef which
-    will receive "($colname, $colidx)" and should return bool (true means
-    show this column). Or, can be an array which contains names of columns
-    that should be shown (e.g. "['num', 'size']"). The array form can also
-    be used to reorder columns or show a column multiple times (e.g.
-    "['num', ..., 'num']" for display.
+    When drawing, only show columns that match this. Can be an array
+    containing names of columns that should be displayed (column names can
+    be in different order or duplicate, column can also be referred to with
+    its numeric index). Can also be a coderef which will be called with
+    "($col_name, $col_num)" for every column and should return a bool value
+    indicating whether that column should be displayed. The coderef version
+    is more limited in that it cannot reorder the columns or instruct for
+    the same column to be displayed more than once.
+
+    Internal note: During drawing, column names will be filtered and put
+    into "$t->{_draw}{fcols}".
 
   use_color => BOOL
     Whether to output color. Default is taken from "COLOR" environment
     variable, or detected via "(-t STDOUT)". If "use_color" is set to 0, an
-    attempt to use a colored color theme (i.e. anything that is not
-    "no_color") will result in an exception.
+    attempt to use a colored color theme (i.e. anything that is not the
+    "no_color" theme) will result in an exception.
 
     (In the future, setting "use_color" to 0 might opt the module to use
     normal/plain string routines instead of the slower ta_* functions from
-    Text::ANSI::Util).
+    Text::ANSI::Util; this also means that the module won't handle ANSI
+    escape codes in the content text.)
 
   color_depth => INT
     Terminal's color depth. Either 16, 256, or 2**24 (16777216). Default
     will be retrieved from "COLOR_DEPTH" environment or detected using
-    "Color::ANSI::Util"'s detect_color_depth().
+    "Color::ANSI::Util"'s "detect_color_depth()".
 
   use_box_chars => BOOL
-    Whether to use box characters. Default is taken from "BOX_CHARS"
-    environment variable, or 1. If "use_box_chars" is set to 0, an attempt
-    to use a border style that uses box chararacters will result in an
-    exception.
+    Whether to use box drawing characters. Drawing box drawing characters
+    can be problematic in some places because it uses ANSI escape codes to
+    switch to (and back from) line drawing mode ("\e(0" and "\e(B",
+    respectively).
+
+    Default is taken from "BOX_CHARS" environment variable, or 1. If
+    "use_box_chars" is set to 0, an attempt to use a border style that uses
+    box drawing chararacters will result in an exception.
 
   use_utf8 => BOOL
-    Whether to use box characters. Default is taken from "UTF8" environment
-    variable, or detected via LANG environment variable, or 1. If "use_utf8"
-    is set to 0, an attempt to select a border style that uses Unicode
-    characters will result in an exception.
+    Whether to use Unicode (UTF8) characters. Default is taken from "UTF8"
+    environment variable, or detected via LANG environment variable, or 1.
+    If "use_utf8" is set to 0, an attempt to select a border style that uses
+    Unicode characters will result in an exception.
 
     (In the future, setting "use_utf8" to 0 might opt the module to use the
     non-"mb_*" version of functions from Text::ANSI::Util, e.g. "ta_wrap()"
@@ -377,7 +395,9 @@ ATTRIBUTES
     name. See "BORDER STYLES"" in " for more details.
 
   border_style_args => HASH
-    Some border styles can accept arguments. You can set it here.
+    Some border styles can accept arguments. You can set it here. See the
+    corresponding border style's documentation for information on what
+    arguments it accepts.
 
   color_theme => HASH
     Color theme specification to use.
@@ -386,7 +406,9 @@ ATTRIBUTES
     name. See "COLOR THEMES"" in " for more details.
 
   color_theme_args => HASH
-    Some color themes can accept arguments. You can set it here.
+    Some color themes can accept arguments. You can set it here. See the
+    corresponding color theme's documentation for information on what
+    arguments it accepts.
 
   show_header => BOOL (default: 1)
     When drawing, whether to show header.
@@ -397,42 +419,48 @@ ATTRIBUTES
     set this to 1, lines will be drawn after every data row. If you set this
     attribute to 0, no lines will be drawn whatsoever.
 
-  column_align => STR
-  column_pad => INT
-    Set (horizontal) padding for all columns. Can be overriden by per-column
+  cell_width => INT
+    Set width for all cells. Can be overriden by per-column "width" style.
+
+  cell_height => INT
+    Set height for all cell. Can be overriden by per-row "height" style.
+
+  cell_align => STR
+    Set (horizontal) alignment for all cells. Either "left", "middle", or
+    "right". Can be overriden by per-column/per-row/per-cell "align" style.
+
+  cell_valign => STR
+    Set (horizontal) alignment for all cells. Either "top", "middle", or
+    "bottom". Can be overriden by per-column/per-row/per-cell "align" style.
+
+  cell_pad => INT
+    Set (horizontal) padding for all cells. Can be overriden by per-column
     "pad" style.
 
-  column_lpad => INT
-    Set left padding for all columns. Overrides the "column_pad" attribute.
-    Can be overriden by per-column "lpad" style.
+  cell_lpad => INT
+    Set left padding for all cells. Overrides the "cell_pad" attribute. Can
+    be overriden by per-column "lpad" style.
 
-  column_rpad => INT
-    Set right padding for all columns. Overrides the "column_pad" attribute.
-    Can be overriden by per-column "rpad" style.
+  cell_rpad => INT
+    Set right padding for all cells. Overrides the "cell_pad" attribute. Can
+    be overriden by per-column "rpad" style.
 
-  column_width => INT
-    Set width for all columns. Can be overriden by per-column "width" style.
-
-  row_vpad => INT
-    Set vertical padding for all rows. Can be overriden by per-row "vpad"
+  cell_vpad => INT
+    Set vertical padding for all cells. Can be overriden by per-row "vpad"
     style.
 
-  row_tpad => INT
-    Set top padding for all rows. Overrides the "row_vpad" attribute. Can be
-    overriden by per-row "tpad" style.
+  cell_tpad => INT
+    Set top padding for all cells. Overrides the "cell_vpad" attribute. Can
+    be overriden by per-row "tpad" style.
 
-  row_bpad => INT
-    Set bottom padding for all rows. Overrides the "row_vpad" attribute. Can
-    be overriden by per-row "bpad" style.
-
-  row_valign => STR
-  row_height => INT
-    Set height for all rows. Can be overriden by per-row "height" style.
+  cell_bpad => INT
+    Set bottom padding for all cells. Overrides the "cell_vpad" attribute.
+    Can be overriden by per-row "bpad" style.
 
   cell_fgcolor => RGB|CODE
     Set foreground color for all cells. Value should be 6-hexdigit RGB. Can
-    also be a coderef that will receive %args (e.g. row_idx, col_name,
-    col_idx) and should return an RGB color. Can be overriden by per-cell
+    also be a coderef that will receive %args (e.g. row_num, col_name,
+    col_num) and should return an RGB color. Can be overriden by per-cell
     "fgcolor" style.
 
   cell_bgcolor => RGB|CODE
@@ -441,7 +469,7 @@ ATTRIBUTES
   header_fgcolor => RGB|CODE
     Set foreground color for all headers. Overrides "cell_fgcolor" for
     headers. Value should be a 6-hexdigit RGB. Can also be a coderef that
-    will receive %args (e.g. col_name, col_idx) and should return an RGB
+    will receive %args (e.g. col_name, col_num) and should return an RGB
     color.
 
   header_bgcolor => RGB|CODE
@@ -449,9 +477,9 @@ ATTRIBUTES
 
   header_align => STR
   header_valign => STR
-  header_vpad => STR
-  header_tpad => STR
-  header_bpad => STR
+  header_vpad => INT
+  header_tpad => INT
+  header_bpad => INT
 METHODS
   $t = Text::ANSITable->new(%attrs) => OBJ
     Constructor.
@@ -479,30 +507,36 @@ METHODS
   $t->add_row_separator() => OBJ
     Add a row separator line.
 
-  $t->cell($row_num, $col[, $newval]) => VAL
-    Get or set cell value at row #$row_num (starts from zero) and column
-    #$col (if $col is a number, starts from zero) or column named $col (if
-    $col does not look like a number).
+  $t->get_cell($row_num, $col) => VAL
+    Get cell value at row #$row_num (starts from zero) and column
+    named/numbered $col.
 
-    When setting value, old value is returned.
+  $t->set_cell($row_num, $col, $newval) => VAL
+    Set cell value at row #$row_num (starts from zero) and column
+    named/numbered $col. Return old value.
 
-  $t->column_style($col, $style[, $newval]) => VAL
-    Get or set per-column style for column named/numbered $col. Available
-    values for $style: pad, lpad, width, formats, fgcolor, bgcolor.
+  $t->get_column_style($col, $style) => VAL
+    Get per-column style for column named/numbered $col.
 
-    When setting value, old value is returned.
+  $t->set_column_style($col, $style=>$val[, $style2=>$val2, ...])
+    Set per-column style(s) for column named/numbered $col. Available values
+    for $style: "align", "valign", "pad", "lpad", "rpad", "width",
+    "formats", "fgcolor", "bgcolor".
 
-  $t->row_style($row_num[, $newval]) => VAL
-    Get or set per-row style. Available values for $style: vpad, tpad, bpad,
-    fgcolor, bgcolor.
+  $t->get_row_style($row_num) => VAL
+    Get per-row style for row numbered $row_num.
 
-    When setting value, old value is returned.
+  $t->set_row_style($row_num, $style=>$newval[, $style2=>$newval2, ...])
+    Set per-row style(s) for row numbered $row_num. Available values for
+    $style: "align", "valign", "height", "vpad", "tpad", "bpad", "fgcolor",
+    "bgcolor".
 
-  $t->cell_style($row_num, $col[, $newval]) => VAL
-    Get or set per-cell style. Available values for $style: formats,
-    fgcolor, bgcolor.
+  $t->get_cell_style($row_num, $col, $style) => VAL
+    Get per-cell style.
 
-    When setting value, old value is returned.
+  $t->set_cell_style($row_num, $col, $style=>$newval[, $style2=>$newval2, ...])
+    Set per-cell style(s). Available values for $style: "align", "valign",
+    "formats", "fgcolor", "bgcolor".
 
   $t->draw => STR
     Render table.
@@ -535,14 +569,87 @@ FAQ
     Or, try not using boxchar border styles, use the utf8 or ascii version.
     Try not using colors.
 
+   How do I hide some columns/rows when drawing?
+    Use the "column_filter" and "row_filter" attributes. For example, given
+    this table:
+
+     my $t = Text::ANSITable->new;
+     $t->columns([qw/one two three/]);
+     $t->add_row([$_, $_, $_]) for 1..10;
+
+    Doing this:
+
+     $t->row_filter([0, 1, 4]);
+     print $t->draw;
+
+    will show:
+
+      one | two | three
+     -----+-----+-------
+        1 |   1 |     1
+        2 |   2 |     2
+        5 |   5 |     5
+
+    Doing this:
+
+     $t->row_filter(sub { my ($row, $idx) = @_; $row->[0] % 2 }
+
+    will display:
+
+      one | two | three
+     -----+-----+-------
+        1 |   1 |     1
+        3 |   3 |     3
+        5 |   5 |     5
+        7 |   7 |     7
+        9 |   9 |     9
+
+    Doing this:
+
+     $t->column_filter([qw/two one 0/]);
+
+    will display:
+
+      two | one | one
+     -----+-----+-----
+        1 |   1 |   1
+        2 |   2 |   2
+        3 |   3 |   3
+        4 |   4 |   4
+        5 |   5 |   5
+        6 |   6 |   6
+        7 |   7 |   7
+        8 |   8 |   8
+        9 |   9 |   9
+       10 |  10 |  10
+
+    Doing this:
+
+     $t->column_filter(sub { my ($colname, $idx) = @_; $colname =~ /t/ });
+
+    will display:
+
+      two | three
+     -----+-------
+        1 |     1
+        2 |     2
+        3 |     3
+        4 |     4
+        5 |     5
+        6 |     6
+        7 |     7
+        8 |     8
+        9 |     9
+       10 |    10
+
   Formatting data
    How do I format data?
     Use the "formats" per-column style or per-cell style. For example:
 
-     $t->column_style('available', formats => [[bool=>{style=>'check_cross'}],
-                                               [centerpad=>{width=>10}]]);
-     $t->column_style('amount'   , formats => [[num=>{decimal_digits=>2}]]);
-     $t->column_style('size'     , formats => [[num=>{style=>'kilo'}]]);
+     $t->set_column_style('available', formats => [[bool=>{style=>'check_cross'}],
+                                                   [centerpad=>{width=>10}]]);
+     $t->set_column_style('amount'   , formats => [[num=>{decimal_digits=>2}]]);
+     $t->set_column_style('size'     , formats => [[num=>{style=>'kilo'}]]);
 
     See Data::Unixish::Apply and Data::Unixish for more details on the
     available formatting functions.
@@ -553,13 +660,22 @@ FAQ
     handle ANSI escape codes and wide characters in your text (unless you
     are sure that your text does not contain those):
 
-     $t->column_style('description', formats=>[[wrap => {width=>60, ansi=>1, mb=>1}]]);
+     $t->set_column_style('description', formats=>[[wrap => {width=>60, ansi=>1, mb=>1}]]);
 
    How do I highlight text with color?
     The "ansi::highlight" dux function can be used to highlight text (see:
     Data::Unixish::ansi::highlight).
 
-     $t->column_style(2, formats => [[highlight => {pattern=>$pat}]]);
+     $t->set_column_style(2, formats => [[highlight => {pattern=>$pat}]]);
+
+   I want to change the default bool cross/check sign representation!
+    By default, bool columns are shown as cross/check sign. This can be
+    changed, e.g.:
+
+     $t->set_column_style($colname, type    => 'bool',
+                                    formats => [[bool => {style=>"Y_N"}]]);
+
+    See Data::Unixish::bool for more details.
 
   Border
    I'm getting 'Wide character in print' error message when I use utf8 border styles!
@@ -568,7 +684,8 @@ FAQ
      binmode(STDOUT, ":utf8");
 
    How to hide borders?
-    Choose border styles like "space_ascii" or "none_utf8":
+    There is currently no "show_border" attribute. Choose border styles like
+    "space_ascii" or "none_utf8":
 
      $t->border_style("none");
 
@@ -629,8 +746,15 @@ FAQ
     Try using the "*_whitebg" themes, as the other themes are geared towards
     terminal emulators with black background.
 
+   How to set different background colors for odd/even rows?
+    Aside from doing "$t->set_row_style($row_num, bgcolor=>...)" for each
+    row, you can also do this:
+
+     $t->cell_bgcolor(sub { my ($self, %args) = @_; $args{y} % 2 ? '202020' : undef });
+
 TODO/BUGS
-    Attributes: header_{pad,lpad,rpad,align,wrap}
+    Attributes: cell_wrap? (a shorter/nicer version for formats => [[wrap =>
+    {ansi=>1, mb=>1}]]).
 
     Column styles: show_{left,right}_border (shorter name? {l,r}border?)
 
