@@ -6,7 +6,7 @@ use warnings;
 
 use Text::ANSITable;
 
-our $VERSION = '0.06'; # VERSION
+our $VERSION = '0.07'; # VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -39,7 +39,7 @@ if ($ARGV[0]) {
     say "Demo table";
     print $t->draw;
 }
-#ABSTRACT: Display a list of known color themes
+#ABSTRACT: List available color themes for Text::ANSITable
 #PODNAME: ansitable-list-color-themes
 
 __END__
@@ -49,11 +49,11 @@ __END__
 
 =head1 NAME
 
-ansitable-list-color-themes - Display a list of known color themes
+ansitable-list-color-themes - List available color themes for Text::ANSITable
 
 =head1 VERSION
 
-version 0.06
+version 0.07
 
 =head1 AUTHOR
 

@@ -16,7 +16,36 @@ use Color::ANSI::Util qw(ansi16fg ansi16bg
 use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets);
 
-our $VERSION = '0.06'; # VERSION
+our $VERSION = '0.07'; # VERSION
+
+my $ATTRS = [qw(
+
+                  use_color color_depth use_box_chars use_utf8 columns rows
+                  column_filter row_filter show_row_separator show_header
+                  show_header cell_width cell_height cell_pad cell_lpad
+                  cell_rpad cell_vpad cell_tpad cell_bpad cell_fgcolor
+                  cell_bgcolor cell_align cell_valign header_align header_valign
+                  header_vpad header_tpad header_bpad header_fgcolor
+                  header_bgcolor color_theme_args border_style_args
+
+          )];
+my $STYLES = $ATTRS;
+my $COLUMN_STYLES = [qw(
+
+                          type width align valign pad lpad rpad formats fgcolor
+                          bgcolor
+
+                  )];
+my $ROW_STYLES = [qw(
+
+                       height align valign vpad tpad bpad fgcolor bgcolor
+
+               )];
+my $CELL_STYLES = [qw(
+
+                        align valign formats fgcolor bgcolor
+
+                )];
 
 has use_color => (
     is      => 'rw',
@@ -157,6 +186,19 @@ has border_style_args => (
 sub BUILD {
     my ($self, $args) = @_;
 
+    # read ANSITABLE_STYLE env
+    if ($ENV{ANSITABLE_STYLE}) {
+        require JSON;
+        my $s = JSON::decode_json($ENV{ANSITABLE_STYLE});
+        for my $k (keys %$s) {
+            my $v = $s->{$k};
+            die "Unknown table style '$k' in ANSITABLE_STYLE environment, ".
+                "please use one of [".join(", ", @$STYLES)."]"
+                    unless $k ~~ $STYLES;
+            $self->{$k} = $v;
+        }
+    }
+
     # pick a default border style
     unless ($self->{border_style}) {
         my $bs;
@@ -207,9 +249,11 @@ sub list_border_styles {
             Module::Load::load($mod);
             my $bs = \%{"$mod\::border_styles"};
             for (keys %$bs) {
-                $bs->{$_}{name} = $_;
-                $bs->{$_}{module} = $mod;
-                $all_bs->{$_} = $bs->{$_};
+                my $cutmod = $mod;
+                $cutmod =~ s/^Text::ANSITable::BorderStyle:://;
+                my $name = "$cutmod\::$_";
+                $bs->{$_}{name} = $name;
+                $all_bs->{$name} = $bs->{$_};
             }
         }
     }
@@ -238,9 +282,11 @@ sub list_color_themes {
             Module::Load::load($mod);
             my $ct = \%{"$mod\::color_themes"};
             for (keys %$ct) {
-                $ct->{$_}{name} = $_;
-                $ct->{$_}{module} = $mod;
-                $all_ct->{$_} = $ct->{$_};
+                my $cutmod = $mod;
+                $cutmod =~ s/^Text::ANSITable::ColorTheme:://;
+                my $name = "$cutmod\::$_";
+                $ct->{$_}{name} = $name;
+                $all_ct->{$name} = $ct->{$_};
             }
         }
     }
@@ -268,7 +314,10 @@ sub border_style {
             no strict 'refs';
             $bss = \%{"Text::ANSITable::BorderStyle::$pkg\::border_styles"};
         } else {
-            $bss = $self->list_border_styles(1);
+            #$bss = $self->list_border_styles(1);
+            die "Please use SubPackage::name to choose border style, ".
+                "use list_border_styles() or the provided ".
+                    "ansitable-list-border-styles to list available styles";
         }
         $bss->{$bs} or die "Unknown border style name '$bs'".
             ($pkg ? " in package Text::ANSITable::BorderStyle::$pkg" : "");
@@ -298,7 +347,10 @@ sub get_color_theme {
         no strict 'refs';
         $cts = \%{"Text::ANSITable::ColorTheme::$pkg\::color_themes"};
     } else {
-        $cts = $self->list_color_themes(1);
+        #$cts = $self->list_color_themes(1);
+        die "Please use SubPackage::name to choose color theme, ".
+            "use list_color_themes() or the provided ".
+                "ansitable-list-color-themes to list available themes";
     }
     $cts->{$ct} or die "Unknown color theme name '$ct'".
         ($pkg ? " in package Text::ANSITable::ColorTheme::$pkg" : "");
@@ -399,19 +451,12 @@ sub set_column_style {
 
     $col = $self->_colnum($col);
 
-    state $valid_styles = [qw/type
-                              width
-                              align valign
-                              pad lpad rpad
-                              formats
-                              fgcolor bgcolor/];
-
     my %sets = ref($_[0]) eq 'HASH' ? %{$_[0]} : @_;
 
     for my $style (keys %sets) {
         my $val = $sets{$style};
         die "Unknown per-column style '$style', please use one of [".
-            join(", ", @$valid_styles) . "]" unless $style ~~ $valid_styles;
+            join(", ", @$COLUMN_STYLES) . "]" unless $style ~~ $COLUMN_STYLES;
         $self->{_column_styles}[$col]{$style} = $val;
     }
 }
@@ -426,17 +471,12 @@ sub set_row_style {
     my $self = shift;
     my $row  = shift;
 
-    state $valid_styles = [qw/height
-                              align valign
-                              vpad tpad bpad
-                              fgcolor bgcolor/];
-
     my %sets = ref($_[0]) eq 'HASH' ? %{$_[0]} : @_;
 
     for my $style (keys %sets) {
         my $val = $sets{$style};
         die "Unknown per-row style '$style', please use one of [".
-            join(", ", @$valid_styles) . "]" unless $style ~~ $valid_styles;
+            join(", ", @$ROW_STYLES) . "]" unless $style ~~ $ROW_STYLES;
         $self->{_row_styles}[$row]{$style} = $val;
     }
 }
@@ -455,16 +495,12 @@ sub set_cell_style {
 
     $col = $self->_colnum($col);
 
-    state $valid_styles = [qw/align valign
-                              formats
-                              fgcolor bgcolor/];
-
     my %sets = ref($_[0]) eq 'HASH' ? %{$_[0]} : @_;
 
     for my $style (keys %sets) {
         my $val = $sets{$style};
         die "Unknown per-cell style '$style', please use one of [".
-            join(", ", @$valid_styles) . "]" unless $style ~~ $valid_styles;
+            join(", ", @$CELL_STYLES) . "]" unless $style ~~ $CELL_STYLES;
         $self->{_cell_styles}[$row][$col]{$style} = $val;
     }
 }
@@ -511,8 +547,6 @@ sub _detect_column_types {
                 $type = 'num';
                 if ($col =~ /(pct|percent(?:age))\b|\%/) {
                     $subtype = 'pct';
-                } else {
-                    $subtype = '';
                 }
                 last DETECT;
             }
@@ -532,7 +566,7 @@ sub _detect_column_types {
         } elsif ($type eq 'num') {
             $res->{align}   = 'right';
             $res->{fgcolor} = $ct->{colors}{num_data};
-            if ($subtype eq 'pct') {
+            if (($subtype//"") eq 'pct') {
                 $res->{formats} = [[num => {style=>'percent'}]];
             }
         } else {
@@ -543,6 +577,63 @@ sub _detect_column_types {
     $self->{_draw}{fcol_detect} = $fcol_detect;
 }
 
+sub _read_style_envs {
+    my $self = shift;
+
+    next if $self->{_draw}{read_style_envs}++;
+
+    if ($ENV{ANSITABLE_COLUMN_STYLES}) {
+        require JSON;
+        my $ss = JSON::decode_json($ENV{ANSITABLE_COLUMN_STYLES});
+        for my $col (keys %$ss) {
+            my $ci = $self->_colnum($col);
+            my $s = $ss->{$col};
+            for my $k (keys %$s) {
+                my $v = $s->{$k};
+            die "Unknown column style '$k' (for column $col) in ANSITABLE_COLUMN_STYLES environment, ".
+                "please use one of [".join(", ", @$COLUMN_STYLES)."]"
+                    unless $k ~~ $COLUMN_STYLES;
+                $self->{_column_styles}[$ci]{$k} //= $v;
+            }
+        }
+    }
+
+    if ($ENV{ANSITABLE_ROW_STYLES}) {
+        require JSON;
+        my $ss = JSON::decode_json($ENV{ANSITABLE_ROW_STYLES});
+        for my $row (keys %$ss) {
+            my $s = $ss->{$row};
+            for my $k (keys %$s) {
+                my $v = $s->{$k};
+            die "Unknown row style '$k' (for row $row) in ANSITABLE_ROW_STYLES environment, ".
+                "please use one of [".join(", ", @$ROW_STYLES)."]"
+                    unless $k ~~ $ROW_STYLES;
+                $self->{_row_styles}[$row]{$k} //= $v;
+            }
+        }
+    }
+
+    if ($ENV{ANSITABLE_CELL_STYLES}) {
+        require JSON;
+        my $ss = JSON::decode_json($ENV{ANSITABLE_CELL_STYLES});
+        for my $cell (keys %$ss) {
+            die "Invalid cell specification in ANSITABLE_CELL_STYLES: $cell, please use 'row,col'"
+                unless $cell =~ /^(.+),(.+)$/;
+            my $row = $1;
+            my $col = $2;
+            my $ci = $self->_colnum($col);
+            my $s = $ss->{$cell};
+            for my $k (keys %$s) {
+                my $v = $s->{$k};
+            die "Unknown cell style '$k' (for row $row) in ANSITABLE_CELL_STYLES environment, ".
+                "please use one of [".join(", ", @$CELL_STYLES)."]"
+                    unless $k ~~ $CELL_STYLES;
+                $self->{_cell_styles}[$row][$ci]{$k} //= $v;
+            }
+        }
+    }
+}
+
 # filter columns & rows, calculate widths/paddings, format data, put the results
 # in _draw (draw data) attribute.
 sub _prepare_draw {
@@ -551,6 +642,8 @@ sub _prepare_draw {
     $self->{_draw} = {};
     $self->{_draw}{y} = 0; # current line
     $self->{_draw}{buf} = [];
+
+    $self->_read_style_envs;
 
     # ansi codes to set and reset line-drawing mode.
     {
@@ -1018,7 +1111,7 @@ sub _get_data_cell_lines {
     my $ct   = $self->{color_theme};
     my $oy   = $self->{_draw}{frow_orig_indices}[$y];
     my $cell = $self->{_draw}{frows}[$y][$x];
-    my $args = {y=>$y, x=>$x, data=>$cell, orig_data=>$self->{rows}[$oy][$x]};
+    my $args = {row_num=>$y, col_num=>$x, data=>$cell, orig_data=>$self->{rows}[$oy][$x]};
 
     my $tmp;
     my $fgcolor;
@@ -1233,7 +1326,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.06
+version 0.07
 
 =head1 SYNOPSIS
 
@@ -1246,8 +1339,8 @@ version 0.06
  my $t = Text::ANSITable->new;
 
  # set styles
- $t->border_style('bold');  # if not, a nice default is picked
- $t->color_theme('sepia');  # if not, a nice default is picked
+ $t->border_style('Default::bold');  # if not, a nice default is picked
+ $t->color_theme('Default::sepia');  # if not, a nice default is picked
 
  # fill data
  $t->columns(["name", "color", "price"]);
@@ -1302,27 +1395,16 @@ B<ansitable-list-border-styles> script. Or, you can also view the documentation
 for the C<Text::ANSITable::BorderStyle::*> modules, where border styles are
 searched.
 
-Border styles are searched in the C<%border_styles> variable in each searched
-package. Hash keys are border style names, hash values are border style
-specifications.
-
 To choose border style, either set the C<border_style> attribute to an available
 border style or a border specification directly.
 
- $t->border_style("singleh_boxchar");
- $t->border_style("foo");   # dies, no such border style
+ $t->border_style("Default::singleh_boxchar");
+ $t->border_style("Foo::bar");   # dies, no such border style
  $t->border_style({ ... }); # set specification directly
 
 If no border style is selected explicitly, a nice default will be chosen. You
 can also set the C<ANSITABLE_BORDER_STYLE> environment variable to set the
 default.
-
-When there are lots of C<Text::ANSITable::BorderStyle::*> modules, searching can
-add some overhead. To avoid searching in all modules, you can specify name using
-C<Subpackage::Name> syntax, e.g.:
-
- # will only search in Text::ANSITable::BorderStyle::Default
- $t->color_theme("Default::bricko");
 
 To create a new border style, create a module under
 C<Text::ANSITable::BorderStyle::>. Please see one of the existing border style
@@ -1361,26 +1443,15 @@ Or you can also run the provided B<ansitable-list-color-themes> script. Or you
 can view the documentation for the C<Text::ANSITable::ColorTheme::*> modules
 where color themes are searched.
 
-Color themes are searched in the C<%color_themes> variable in each searched
-package. Hash keys are color theme names, hash values are color theme
-specifications.
-
 To choose a color theme, either set the C<color_theme> attribute to an available
 color theme or a border specification directly.
 
- $t->color_theme("default_nogradation");
- $t->color_theme("foo");    # dies, no such color theme
+ $t->color_theme("Default::default_nogradation");
+ $t->color_theme("Foo::bar");    # dies, no such color theme
  $t->color_theme({ ... });  # set specification directly
 
 If no color theme is selected explicitly, a nice default will be chosen. You can
 also set the C<ANSITABLE_COLOR_THEME> environment variable to set the default.
-
-When there are lots of C<Text::ANSITable::ColorTheme::*> modules, searching can
-add some overhead. To avoid searching in all modules, you can specify name using
-C<Subpackage::Name> syntax, e.g.:
-
- # will only search in Text::ANSITable::ColorTheme::Default
- $t->color_theme("Default::default_nogradation");
 
 To create a new color theme, create a module under
 C<Text::ANSITable::ColorTheme::>. Please see one of the existing color theme
@@ -1824,7 +1895,7 @@ Get per-column style for column named/numbered C<$col>.
 
 Set per-column style(s) for column named/numbered C<$col>. Available values for
 C<$style>: C<align>, C<valign>, C<pad>, C<lpad>, C<rpad>, C<width>, C<formats>,
-C<fgcolor>, C<bgcolor>.
+C<fgcolor>, C<bgcolor>, C<type>.
 
 =head2 $t->get_row_style($row_num) => VAL
 
@@ -1874,6 +1945,46 @@ Can be used to set default value for C<border_style> attribute.
 =head2 ANSITABLE_COLOR_THEME => STR
 
 Can be used to set default value for C<border_style> attribute.
+
+=head2 ANSITABLE_STYLE => JSON
+
+Can be used to set table's most attributes. Value should be a JSON-encoded hash
+of C<< attr => val >> pairs. Example:
+
+ % ANSITABLE_STYLE='{"show_row_separator":1}' ansitable-list-border-styles
+
+will display table with row separator lines after every row.
+
+=head2 ANSITABLE_COLUMN_STYLES => JSON
+
+Can be used to set per-column styles. Interpreted right before draw(). Value
+should be a JSON-encoded hash of C<< col => {style => val, ...} >> pairs.
+Example:
+
+ % ANSITABLE_COLUMN_STYLES='{"2":{"type":"num"},"3":{"type":"str"}}' ansitable-list-border-styles
+
+will display the bool columns as num and str instead.
+
+=head2 ANSITABLE_ROW_STYLES => JSON
+
+Can be used to set per-row styles. Interpreted right before draw(). Value should
+be a JSON-encoded a hash of C<< row_num => {style => val, ...} >> pairs.
+Example:
+
+ % ANSITABLE_ROW_STYLES='{"0":{"bgcolor":"000080","vpad":1}}' ansitable-list-border-styles
+
+will display the first row with blue background color and taller height.
+
+=head2 ANSITABLE_CELL_STYLES => JSON
+
+Can be used to set per-cell styles. Interpreted right before draw(). Value
+should be a JSON-encoded a hash of C<< "row_num,col" => {style => val, ...} >>
+pairs. Example:
+
+ % ANSITABLE_CELL_STYLES='{"1,1":{"bgcolor":"008000"}}' ansitable-list-border-styles
+
+will display the second-on-the-left, second-on-the-top cell with green
+background color.
 
 =head1 FAQ
 
@@ -1975,6 +2086,31 @@ Use the C<formats> per-column style or per-cell style. For example:
 See L<Data::Unixish::Apply> and L<Data::Unixish> for more details on the
 available formatting functions.
 
+=head3 How does the module determine column data type?
+
+Currently: if column name has the word C<date> or C<time> in it, the column is
+assumed to contain B<date> data. If column name has C<?> in it, the column is
+assumed to be B<bool>. If a column contains only numbers (or undefs), it is
+B<num>. Otherwise, it is B<str>.
+
+=head3 How does the module format data types?
+
+Currently: B<num> will be right aligned and applied C<num_data> color (cyan in
+the default theme). B<date> will be centered and applied C<date_data> color
+(gold in the default theme). B<bool> will be centered and formatted as
+check/cross symbol and applied C<bool_data> color (red/green depending on
+whether the data is false/true). B<str> will be applied C<str_data> color (no
+color in the default theme).
+
+Other color themes might use different colors.
+
+=head3 How do I force column to be of a certain data type?
+
+For example, you have a column named B<deleted> but want to display it as
+B<bool>. You can do:
+
+ $t->set_column_type(deleted => type => 'bool');
+
 =head3 How do I wrap long text?
 
 The C<wrap> dux function can be used to wrap text (see: L<Data::Unixish::wrap>).
@@ -2012,9 +2148,9 @@ Add something like this first before printing to your output:
 =head3 How to hide borders?
 
 There is currently no C<show_border> attribute. Choose border styles like
-C<space_ascii> or C<none_utf8>:
+C<Default::space_ascii> or C<Default::none_utf8>:
 
- $t->border_style("none");
+ $t->border_style("Default::none");
 
 =head2 I want to hide borders, and I do not want row separators to be shown!
 
@@ -2087,7 +2223,7 @@ terminal emulators with black background.
 Aside from doing C<< $t->set_row_style($row_num, bgcolor=>...) >> for each row,
 you can also do this:
 
- $t->cell_bgcolor(sub { my ($self, %args) = @_; $args{y} % 2 ? '202020' : undef });
+ $t->cell_bgcolor(sub { my ($self, %args) = @_; $args{row_num} % 2 ? '202020' : undef });
 
 =head1 TODO/BUGS
 
@@ -2101,6 +2237,12 @@ Row styles: show_{top,bottom}_border (shorter name? {t,b}border?)
 row span? column span?
 
 =head1 SEE ALSO
+
+For collections of border styles, search for <Text::ANSITable::BorderStyle::*>
+modules.
+
+For collections of color themes, search for <Text::ANSITable::ColorTheme::*>
+modules.
 
 Other table-formatting modules: L<Text::Table>, L<Text::SimpleTable>,
 L<Text::ASCIITable> (which I usually used), L<Text::UnicodeTable::Simple>,

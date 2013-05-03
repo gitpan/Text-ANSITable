@@ -6,7 +6,7 @@ use warnings;
 
 use Text::ANSITable;
 
-our $VERSION = '0.06'; # VERSION
+our $VERSION = '0.07'; # VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -18,12 +18,12 @@ if ($ARGV[0]) {
 
 my $all_bs = $t->list_border_styles(1);
 
-$t->columns(['Name', 'Module', 'Summary', 'box_chars?', 'utf8?']);
+$t->columns(['Name', 'Summary', 'box_chars?', 'utf8?']);
 my $utf8; # we sort by not utf8 and then utf8, just to demonstrate add_row_separator
 for my $name (sort {($all_bs->{$a}{utf8} ? 1:0)<=>($all_bs->{$b}{utf8} ? 1:0) || $a cmp $b} keys %$all_bs) {
     my $bs = $all_bs->{$name};
     $t->add_row(
-        [$name, $bs->{module}, $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0],
+        [$name, $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0],
         {fgcolor=>$name eq $t->border_style->{name} ? "aaaa00" : undef});
 
     if (!$utf8 && $bs->{utf8}) {
@@ -37,7 +37,7 @@ print $t->draw;
 
 #use Data::Dump; dd $t->{_row_separators}; dd $t->{_draw}{frow_separators};
 
-#ABSTRACT: Display a list of known border styles
+#ABSTRACT: List available border styles for Text::ANSITable
 #PODNAME: ansitable-list-border-styles
 
 __END__
@@ -47,11 +47,11 @@ __END__
 
 =head1 NAME
 
-ansitable-list-border-styles - Display a list of known border styles
+ansitable-list-border-styles - List available border styles for Text::ANSITable
 
 =head1 VERSION
 
-version 0.06
+version 0.07
 
 =head1 AUTHOR
 

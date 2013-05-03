@@ -39,6 +39,7 @@
             "Data::Unixish::Apply" : "1.33",
             "Data::Unixish::ansi" : "0.02",
             "DateTime" : "0",
+            "JSON" : "0",
             "Log::Any" : "0",
             "Module::List" : "0",
             "Moo" : "0",
@@ -61,6 +62,6 @@
          "url" : "http://github.com/sharyanto/perl-Text-ANSITable"
       }
    },
-   "version" : "0.06"
+   "version" : "0.07"
 }
 

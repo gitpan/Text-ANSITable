@@ -19,7 +19,7 @@ my %module_build_args = (
     "Steven Haryanto <stevenharyanto\@gmail.com>"
   ],
   "dist_name" => "Text-ANSITable",
-  "dist_version" => "0.06",
+  "dist_version" => "0.07",
   "license" => "perl",
   "module_name" => "Text::ANSITable",
   "recommends" => {},
@@ -30,6 +30,7 @@ my %module_build_args = (
     "Data::Unixish::Apply" => "1.33",
     "Data::Unixish::ansi" => "0.02",
     "DateTime" => 0,
+    "JSON" => 0,
     "Log::Any" => 0,
     "Module::List" => 0,
     "Moo" => 0,
