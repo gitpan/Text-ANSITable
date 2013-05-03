@@ -3,7 +3,7 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.07
+    version 0.08
 
 SYNOPSIS
      use 5.010;
@@ -344,7 +344,7 @@ ATTRIBUTES
   color_depth => INT
     Terminal's color depth. Either 16, 256, or 2**24 (16777216). Default
     will be retrieved from "COLOR_DEPTH" environment or detected using
-    "Color::ANSI::Util"'s "detect_color_depth()".
+    Term::Detect.
 
   use_box_chars => BOOL
     Whether to use box drawing characters. Drawing box drawing characters
@@ -358,9 +358,10 @@ ATTRIBUTES
 
   use_utf8 => BOOL
     Whether to use Unicode (UTF8) characters. Default is taken from "UTF8"
-    environment variable, or detected via LANG environment variable, or 1.
-    If "use_utf8" is set to 0, an attempt to select a border style that uses
-    Unicode characters will result in an exception.
+    environment variable, or detected using Term::Detect, or guessed via
+    LANG environment variable. If "use_utf8" is set to 0, an attempt to
+    select a border style that uses Unicode characters will result in an
+    exception.
 
     (In the future, setting "use_utf8" to 0 might opt the module to use the
     non-"mb_*" version of functions from Text::ANSI::Util, e.g. "ta_wrap()"
@@ -725,7 +726,7 @@ FAQ
 
      $t->border_style("Default::none");
 
-  I want to hide borders, and I do not want row separators to be shown!
+   I want to hide borders, and I do not want row separators to be shown!
     The default is for separator lines to be drawn if drawn using
     "add_row_separator()", e.g.:
 
@@ -761,8 +762,10 @@ FAQ
     environment to 1.
 
    How to enable 256 colors? I'm seeing only 16 colors.
-    Set your "TERM" to "xterm-256color". Also make sure your terminal
-    emulator supports 256 colors.
+    Use terminal emulators that support 256 colors, e.g. Konsole, xterm,
+    gnome-terminal, PuTTY/pterm (but the last one has minimal Unicode
+    support). Better yet, use Konsole or Konsole-based emulators which
+    supports 24bit colors.
 
    How to enable 24bit colors (true color)?
     Currently only Konsole and the Konsole-based Yakuake terminal emulator
@@ -789,6 +792,9 @@ FAQ
      $t->cell_bgcolor(sub { my ($self, %args) = @_; $args{row_num} % 2 ? '202020' : undef });
 
 TODO/BUGS
+    Most color themes still look crappy on 256 colors (I develop on
+    Konsole).
+
     Attributes: cell_wrap? (a shorter/nicer version for formats => [[wrap =>
     {ansi=>1, mb=>1}]]).
 

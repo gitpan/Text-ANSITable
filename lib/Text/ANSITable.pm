@@ -10,13 +10,12 @@ use Moo;
 use Color::ANSI::Util qw(ansi16fg ansi16bg
                          ansi256fg ansi256bg
                          ansi24bfg ansi24bbg
-                         detect_color_depth
                     );
 #use List::Util qw(first);
 use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets);
 
-our $VERSION = '0.07'; # VERSION
+our $VERSION = '0.08'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -50,14 +49,17 @@ my $CELL_STYLES = [qw(
 has use_color => (
     is      => 'rw',
     default => sub {
-        $ENV{COLOR} // (-t STDOUT) // 1;
+        my $self = shift;
+        $ENV{COLOR} // (-t STDOUT) //
+            $self->_detect_terminal->{color_depth} > 0;
     },
 );
 has color_depth => (
     is      => 'rw',
     default => sub {
+        my $self = shift;
         return $ENV{COLOR_DEPTH} if defined $ENV{COLOR_DEPTH};
-        return detect_color_depth() // 16;
+        return $self->_detect_terminal->{color_depth} // 16;
     },
 );
 has use_box_chars => (
@@ -69,8 +71,10 @@ has use_box_chars => (
 has use_utf8 => (
     is      => 'rw',
     default => sub {
+        my $self = shift;
         $ENV{UTF8} //
-            (($ENV{LANG} // "") =~ /utf-?8/i ? 1:undef) // 1;
+            $self->_detect_terminal->{unicode} //
+                (($ENV{LANG} // "") =~ /utf-?8/i ? 1:0);
     },
 );
 has columns => (
@@ -183,6 +187,16 @@ has border_style_args => (
     default => sub { {} },
 );
 
+my $dt_cache;
+sub _detect_terminal {
+    if (!$dt_cache) {
+        require Term::Detect;
+        $dt_cache = Term::Detect::detect_terminal("p") // {};
+        #use Data::Dump; dd $dt_cache;
+    }
+    $dt_cache;
+}
+
 sub BUILD {
     my ($self, $args) = @_;
 
@@ -207,9 +221,9 @@ sub BUILD {
         } elsif ($self->{use_utf8}) {
             $bs = 'Default::bricko';
         } elsif ($self->{use_box_chars}) {
-            $bs = 'Default::single_boxchar';
+            $bs = 'Default::singleo_boxchar';
         } else {
-            $bs = 'Default::single_ascii';
+            $bs = 'Default::singleo_ascii';
         }
         $self->border_style($bs);
     }
@@ -220,10 +234,11 @@ sub BUILD {
         if (defined $ENV{ANSITABLE_COLOR_THEME}) {
             $ct = $ENV{ANSITABLE_COLOR_THEME};
         } elsif ($self->{use_color}) {
+            my $bg = $self->_detect_terminal->{default_bgcolor} // '';
             if ($self->{color_depth} >= 2**24) {
-                $ct = 'Default::default_gradation';
+                $ct = 'Default::default_gradation' . ($bg eq 'ffffff' ? '_whitebg' : '');
             } else {
-                $ct = 'Default::default_nogradation';
+                $ct = 'Default::default_nogradation' . ($bg eq 'ffffff' ? '_whitebg' : '');;
             }
         } else {
             $ct = 'Default::no_color';
@@ -1326,7 +1341,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.07
+version 0.08
 
 =head1 SYNOPSIS
 
@@ -1707,8 +1722,7 @@ codes in the content text.)
 =head2 color_depth => INT
 
 Terminal's color depth. Either 16, 256, or 2**24 (16777216). Default will be
-retrieved from C<COLOR_DEPTH> environment or detected using
-C<Color::ANSI::Util>'s C<detect_color_depth()>.
+retrieved from C<COLOR_DEPTH> environment or detected using L<Term::Detect>.
 
 =head2 use_box_chars => BOOL
 
@@ -1723,9 +1737,9 @@ drawing chararacters will result in an exception.
 =head2 use_utf8 => BOOL
 
 Whether to use Unicode (UTF8) characters. Default is taken from C<UTF8>
-environment variable, or detected via L<LANG> environment variable, or 1. If
-C<use_utf8> is set to 0, an attempt to select a border style that uses Unicode
-characters will result in an exception.
+environment variable, or detected using L<Term::Detect>, or guessed via L<LANG>
+environment variable. If C<use_utf8> is set to 0, an attempt to select a border
+style that uses Unicode characters will result in an exception.
 
 (In the future, setting C<use_utf8> to 0 might opt the module to use the
 non-"mb_*" version of functions from L<Text::ANSI::Util>, e.g. C<ta_wrap()>
@@ -2152,7 +2166,7 @@ C<Default::space_ascii> or C<Default::none_utf8>:
 
  $t->border_style("Default::none");
 
-=head2 I want to hide borders, and I do not want row separators to be shown!
+=head3 I want to hide borders, and I do not want row separators to be shown!
 
 The default is for separator lines to be drawn if drawn using
 C<add_row_separator()>, e.g.:
@@ -2193,8 +2207,9 @@ colors by setting C<use_color> attribute or C<COLOR> environment to 1.
 
 =head3 How to enable 256 colors? I'm seeing only 16 colors.
 
-Set your C<TERM> to C<xterm-256color>. Also make sure your terminal emulator
-supports 256 colors.
+Use terminal emulators that support 256 colors, e.g. Konsole, xterm,
+gnome-terminal, PuTTY/pterm (but the last one has minimal Unicode support).
+Better yet, use Konsole or Konsole-based emulators which supports 24bit colors.
 
 =head3 How to enable 24bit colors (true color)?
 
@@ -2226,6 +2241,8 @@ you can also do this:
  $t->cell_bgcolor(sub { my ($self, %args) = @_; $args{row_num} % 2 ? '202020' : undef });
 
 =head1 TODO/BUGS
+
+Most color themes still look crappy on 256 colors (I develop on Konsole).
 
 Attributes: cell_wrap? (a shorter/nicer version for formats => [[wrap =>
 {ansi=>1, mb=>1}]]).

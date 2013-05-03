@@ -6,7 +6,7 @@ use warnings;
 
 use Text::ANSITable;
 
-our $VERSION = '0.07'; # VERSION
+our $VERSION = '0.08'; # VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -51,7 +51,7 @@ ansitable-list-border-styles - List available border styles for Text::ANSITable
 
 =head1 VERSION
 
-version 0.07
+version 0.08
 
 =head1 AUTHOR
 
