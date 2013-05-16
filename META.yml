@@ -25,6 +25,7 @@ requires:
   Log::Any: 0
   Module::List: 0
   Moo: 0
+  Parse::VarName: 0
   SHARYANTO::Color::Util: 0
   Term::Detect: 0.02
   Text::ANSI::Util: 0.08
@@ -32,4 +33,4 @@ requires:
 resources:
   homepage: http://metacpan.org/release/Text-ANSITable
   repository: http://github.com/sharyanto/perl-Text-ANSITable
-version: 0.08
+version: 0.09

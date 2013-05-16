@@ -6,7 +6,7 @@ use warnings;
 
 use Text::ANSITable;
 
-our $VERSION = '0.08'; # VERSION
+our $VERSION = '0.09'; # VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -22,9 +22,10 @@ $t->columns(['Name', 'Summary', 'box_chars?', 'utf8?']);
 my $utf8; # we sort by not utf8 and then utf8, just to demonstrate add_row_separator
 for my $name (sort {($all_bs->{$a}{utf8} ? 1:0)<=>($all_bs->{$b}{utf8} ? 1:0) || $a cmp $b} keys %$all_bs) {
     my $bs = $all_bs->{$name};
+    my $selected = $name eq $t->border_style->{name};
     $t->add_row(
-        [$name, $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0],
-        {fgcolor=>$name eq $t->border_style->{name} ? "aaaa00" : undef});
+        [$name . ($selected ? " (*)" : ""), $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0],
+        {fgcolor=>$selected ? "aaaa00" : undef});
 
     if (!$utf8 && $bs->{utf8}) {
         $t->add_row_separator;
@@ -51,7 +52,7 @@ ansitable-list-border-styles - List available border styles for Text::ANSITable
 
 =head1 VERSION
 
-version 0.08
+version 0.09
 
 =head1 AUTHOR
 

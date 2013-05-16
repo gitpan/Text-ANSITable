@@ -3,7 +3,7 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.08
+    version 0.09
 
 SYNOPSIS
      use 5.010;
@@ -806,10 +806,10 @@ TODO/BUGS
 
 SEE ALSO
     For collections of border styles, search for
-    <Text::ANSITable::BorderStyle::*> modules.
+    "Text::ANSITable::BorderStyle::*" modules.
 
     For collections of color themes, search for
-    <Text::ANSITable::ColorTheme::*> modules.
+    "Text::ANSITable::ColorTheme::*" modules.
 
     Other table-formatting modules: Text::Table, Text::SimpleTable,
     Text::ASCIITable (which I usually used), Text::UnicodeTable::Simple,
