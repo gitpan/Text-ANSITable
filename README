@@ -3,7 +3,7 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.09
+    version 0.10
 
 SYNOPSIS
      use 5.010;
@@ -470,6 +470,14 @@ METHODS
   $t->list_color_themes => LIST
     Return the names of available color themes. Color themes will be
     searched in "Text::ANSITable::ColorTheme::*" modules.
+
+  $t->get_border_style($name) => HASH
+    Can also be called as a static method:
+    "Text::ANSITable->get_border_style($name)".
+
+  $t->get_color_theme($name) => HASH
+    Can also be called as a static method:
+    "Text::ANSITable->get_color_theme($name)".
 
   $t->add_row(\@row[, \%styles]) => OBJ
     Add a row. Note that row data is not copied, only referenced.

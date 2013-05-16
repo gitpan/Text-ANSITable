@@ -33,4 +33,4 @@ requires:
 resources:
   homepage: http://metacpan.org/release/Text-ANSITable
   repository: http://github.com/sharyanto/perl-Text-ANSITable
-version: 0.09
+version: 0.10

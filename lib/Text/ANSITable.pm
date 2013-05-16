@@ -15,7 +15,7 @@ use Color::ANSI::Util qw(ansi16fg ansi16bg
 use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets);
 
-our $VERSION = '0.09'; # VERSION
+our $VERSION = '0.10'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -315,30 +315,38 @@ sub list_color_themes {
     }
 }
 
+sub get_border_style {
+    my ($self, $bs) = @_;
+
+    my $bss;
+    my $pkg;
+    if ($bs =~ s/(.+):://) {
+        $pkg = $1;
+        my $pkgp = $pkg; $pkgp =~ s!::!/!g;
+        require "Text/ANSITable/BorderStyle/$pkgp.pm";
+        no strict 'refs';
+        $bss = \%{"Text::ANSITable::BorderStyle::$pkg\::border_styles"};
+    } else {
+        #$bss = $self->list_border_styles(1);
+        die "Please use SubPackage::name to choose border style, ".
+            "use list_border_styles() or the provided ".
+                "ansitable-list-border-styles to list available styles";
+    }
+    $bss->{$bs} or die "Unknown border style name '$bs'".
+        ($pkg ? " in package Text::ANSITable::BorderStyle::$pkg" : "");
+    $bss->{$bs};
+}
+
 sub border_style {
     my $self = shift;
 
     if (!@_) { return $self->{border_style} }
     my $bs = shift;
 
+    my $p2 = "";
     if (!ref($bs)) {
-        my $bss;
-        my $pkg;
-        if ($bs =~ s/(.+):://) {
-            $pkg = $1;
-            my $pkgp = $pkg; $pkgp =~ s!::!/!g;
-            require "Text/ANSITable/BorderStyle/$pkgp.pm";
-            no strict 'refs';
-            $bss = \%{"Text::ANSITable::BorderStyle::$pkg\::border_styles"};
-        } else {
-            #$bss = $self->list_border_styles(1);
-            die "Please use SubPackage::name to choose border style, ".
-                "use list_border_styles() or the provided ".
-                    "ansitable-list-border-styles to list available styles";
-        }
-        $bss->{$bs} or die "Unknown border style name '$bs'".
-            ($pkg ? " in package Text::ANSITable::BorderStyle::$pkg" : "");
-        $bs = $bss->{$bs};
+        $p2 = " named $bs";
+        $bs = $self->get_border_style($bs);
     }
 
     my $err;
@@ -347,7 +355,7 @@ sub border_style {
     } elsif ($bs->{utf8} && !$self->use_utf8) {
         $err = "use_utf8 is set to false";
     }
-    die "Can't select border style: $err" if $err;
+    die "Can't select border style$p2: $err" if $err;
 
     $self->{border_style} = $bs;
 }
@@ -371,7 +379,7 @@ sub get_color_theme {
     }
     $cts->{$ct} or die "Unknown color theme name '$ct'".
         ($pkg ? " in package Text::ANSITable::ColorTheme::$pkg" : "");
-    $ct = $cts->{$ct};
+    $cts->{$ct};
 }
 
 sub color_theme {
@@ -380,7 +388,7 @@ sub color_theme {
     if (!@_) { return $self->{color_theme} }
     my $ct = shift;
 
-    my $p2;
+    my $p2 = "";
     if (!ref($ct)) {
         $p2 = " named $ct";
         $ct = $self->get_color_theme($ct);
@@ -1359,7 +1367,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.09
+version 0.10
 
 =head1 SYNOPSIS
 
@@ -1415,7 +1423,7 @@ fine-grained options to customize appearance.
 
 It uses L<Moo> object system.
 
-=for Pod::Coverage ^(BUILD|get_color_theme|get_border_style|draw_.+|color2ansi|get_color_reset|get_theme_color|get_border_char)$
+=for Pod::Coverage ^(BUILD|draw_.+|color2ansi|get_color_reset|get_theme_color|get_border_char)$
 
 =head1 BORDER STYLES
 
@@ -1892,6 +1900,16 @@ C<Text::ANSITable::BorderStyle::*> modules.
 
 Return the names of available color themes. Color themes will be searched in
 C<Text::ANSITable::ColorTheme::*> modules.
+
+=head2 $t->get_border_style($name) => HASH
+
+Can also be called as a static method: C<<
+Text::ANSITable->get_border_style($name) >>.
+
+=head2 $t->get_color_theme($name) => HASH
+
+Can also be called as a static method: C<<
+Text::ANSITable->get_color_theme($name) >>.
 
 =head2 $t->add_row(\@row[, \%styles]) => OBJ
 
