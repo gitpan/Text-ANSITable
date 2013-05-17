@@ -3,7 +3,7 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.10
+    version 0.11
 
 SYNOPSIS
      use 5.010;
@@ -330,6 +330,11 @@ ATTRIBUTES
     Internal note: During drawing, column names will be filtered and put
     into "$t->{_draw}{fcols}".
 
+  column_wrap => BOOL
+    Set column wrapping for all columns. Can be overriden by per-column
+    "wrap" style. By default column wrapping will only be done for text
+    columns and when width is explicitly set to a positive value.
+
   use_color => BOOL
     Whether to output color. Default is taken from "COLOR" environment
     variable, or detected via "(-t STDOUT)". If "use_color" is set to 0, an
@@ -508,7 +513,7 @@ METHODS
   $t->set_column_style($col, $style=>$val[, $style2=>$val2, ...])
     Set per-column style(s) for column named/numbered $col. Available values
     for $style: "align", "valign", "pad", "lpad", "rpad", "width",
-    "formats", "fgcolor", "bgcolor", "type".
+    "formats", "fgcolor", "bgcolor", "type", "wrap".
 
   $t->get_row_style($row_num) => VAL
     Get per-row style for row numbered $row_num.

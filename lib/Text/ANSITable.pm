@@ -15,7 +15,7 @@ use Color::ANSI::Util qw(ansi16fg ansi16bg
 use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets);
 
-our $VERSION = '0.10'; # VERSION
+our $VERSION = '0.11'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -32,7 +32,7 @@ my $STYLES = $ATTRS;
 my $COLUMN_STYLES = [qw(
 
                           type width align valign pad lpad rpad formats fgcolor
-                          bgcolor
+                          bgcolor wrap
 
                   )];
 my $ROW_STYLES = [qw(
@@ -86,6 +86,9 @@ has rows => (
     default => sub { [] },
 );
 has column_filter => (
+    is => 'rw',
+);
+has column_wrap => (
     is => 'rw',
 );
 has row_filter => (
@@ -605,6 +608,7 @@ sub _detect_column_types {
             }
         } else {
             $res->{fgcolor} = $ct->{colors}{str_data};
+            $res->{wrap}    = 1;
         }
     }
 
@@ -673,6 +677,34 @@ sub _read_style_envs {
     }
 }
 
+# calculate width and height of a cell, but skip calculating (to save some
+# cycles) if width is already set by frow_setheights / fcol_setwidths.
+sub _opt_calc_width_height {
+    my ($self, $frow_num, $col, $text) = @_;
+
+    $col = $self->_colnum($col);
+    my $setw  = $self->{_draw}{fcol_setwidths}[$col];
+    my $calcw = !defined($setw) || $setw < 0;
+    my $seth  = defined($frow_num) ?
+        $self->{_draw}{frow_setheights}[$frow_num] : undef;
+    my $calch = !defined($seth) || $seth < 0;
+
+    my $wh;
+    if ($calcw) {
+        $wh = ta_mbswidth_height($text);
+        $wh->[0] = -$setw if defined($setw) && $setw<0 && $wh->[0] < -$setw;
+        $wh->[1] = $seth if !$calch;
+        $wh->[1] = -$seth if defined($seth) && $seth<0 && $wh->[1] < -$seth;
+    } elsif ($calch) {
+        my $h = 1; $h++ while $text =~ /\n/go;
+        $h = -$seth if defined($seth) && $seth<0 && $h < -$seth;
+        $wh = [$setw, $h];
+    } else {
+        $wh = [$setw, $seth];
+    }
+    $wh;
+}
+
 # filter columns & rows, calculate widths/paddings, format data, put the results
 # in _draw (draw data) attribute.
 sub _prepare_draw {
@@ -707,15 +739,22 @@ sub _prepare_draw {
         $fcols = $cols;
     }
 
-    # calculate widths/heights of header
-    my $fcol_widths = []; # index = [colnum]
+    my $fcol_setwidths  = []; # index = [colnum], from cell_width/col width
+    my $frow_setheights = []; # index = [frownum], from cell_height/row height
+    $self->{_draw}{fcol_setwidths}  = $fcol_setwidths;
+    $self->{_draw}{frow_setheights} = $frow_setheights;
+
+    # calculate widths/heights of header, store width settings
+    my $fcol_widths = [];    # index = [colnum]
     my $header_height;
     {
         my %seen;
         for my $i (0..@$cols-1) {
             next unless $cols->[$i] ~~ $fcols;
             next if $seen{$cols->[$i]}++;
-            my $wh = ta_mbswidth_height($cols->[$i]);
+            $fcol_setwidths->[$i] = $self->get_column_style($i, 'width') //
+                $self->{cell_width};
+            my $wh = $self->_opt_calc_width_height(undef, $i, $cols->[$i]);
             $fcol_widths->[$i] = $wh->[0];
             $header_height = $wh->[1]
                 if !defined($header_height) || $header_height < $wh->[1];
@@ -723,7 +762,7 @@ sub _prepare_draw {
     }
     $self->{_draw}{header_height} = $header_height;
 
-    # calculate vertical paddings of data rows
+    # calculate vertical paddings of data rows, store height settings
     my $frow_tpads  = []; # index = [frownum]
     my $frow_bpads  = []; # ditto
     my $frows = [];
@@ -742,6 +781,8 @@ sub _prepare_draw {
                 next unless $i ~~ $rf;
             }
             $j++;
+            push @$frow_setheights, $self->get_row_style($i, 'height') //
+                $self->{cell_height};
             push @$frows, [@$row]; # 1-level clone, for storing formatted values
             push @$frow_separators, $j if $i ~~ $self->{_row_separators};
             push @$frow_tpads, $self->get_row_style($i, 'tpad') //
@@ -772,13 +813,20 @@ sub _prepare_draw {
         for my $i (0..@$cols-1) {
             next unless $cols->[$i] ~~ $fcols;
             next if $seen{$cols->[$i]}++;
-            my $fmts = $self->get_column_style($i, 'formats') //
-                $fcol_detect->[$i]{formats};
-            if (defined $fmts) {
+            my @fmts = @{ $self->get_column_style($i, 'formats') //
+                $fcol_detect->[$i]{formats} // [] };
+            if (($self->get_column_style($i, 'wrap') // $self->{column_wrap} //
+                    $fcol_detect->[$i]{wrap}) &&
+                        defined($fcol_setwidths->[$i]) &&
+                            $fcol_setwidths->[$i]>0) {
+                push @fmts,
+                    [wrap => {mb=>1, ansi=>1, columns=>$fcol_setwidths->[$i]}];
+            }
+            if (@fmts) {
                 require Data::Unixish::Apply;
                 my $res = Data::Unixish::Apply::apply(
                     in => [map {$frows->[$_][$i]} 0..@$frows-1],
-                    functions => $fmts,
+                    functions => \@fmts,
                 );
                 die "Can't format column $cols->[$i]: $res->[0] - $res->[1]"
                     unless $res->[0] == 200;
@@ -799,14 +847,11 @@ sub _prepare_draw {
 
     # apply cell formats, calculate widths/heights of data rows
     my $frow_heights  = []; # index = [frownum]
-    #my $fcell_heights = []; # index = [frownum][colnum]
     {
         my $height = $self->{cell_height};
-        my $width  = $self->{cell_width};
         my $tpad = $self->{cell_tpad} // $self->{cell_vpad}; # tbl-lvl tpad
         my $bpad = $self->{cell_bpad} // $self->{cell_vpad}; # tbl-lvl bpad
         my $cswidths = [map {$self->get_column_style($_, 'width')} 0..@$cols-1];
-        my $val;
         for my $i (0..@$frows-1) {
             my %seen;
             my $origi = $frow_orig_indices->[$i];
@@ -829,52 +874,16 @@ sub _prepare_draw {
                 }
 
                 # calculate heights/widths of data
-                my $wh = ta_mbswidth_height($frows->[$i][$j]);
-                #$fcell_heights->[$i][$j] = $wh->[1];
+                my $wh = $self->_opt_calc_width_height($i,$j, $frows->[$i][$j]);
 
-                $val = $wh->[1];
-                if (defined $rsheight) {
-                    if ($rsheight < 0) {
-                        # heighten to minimum height
-                        $val = -$rsheight if $val < -$rsheight;
-                    } else {
-                        $val =  $rsheight if $val <  $rsheight;
-                    }
-                } elsif (defined $height) {
-                    if ($height < 0) {
-                        # heighten to minimum height
-                        $val = -$height if $val < -$height;
-                    } else {
-                        $val =  $height if $val <  $height;
-                    }
-                }
-
-                $frow_heights->[$i] = $val if !defined($frow_heights->[$i]) ||
-                    $frow_heights->[$i] < $val;
-
-                $val = $wh->[0];
-                if (defined $cswidths->[$j]) {
-                    if ($cswidths->[$j] < 0) {
-                        # widen to minimum width
-                        $val = -$cswidths->[$j] if $val < -$cswidths->[$j];
-                    } else {
-                        $val =  $cswidths->[$j] if $val <  $cswidths->[$j];
-                    }
-                } elsif (defined $width) {
-                    if ($width < 0) {
-                        # widen to minimum width
-                        $val = -$width if $val < -$width;
-                    } else {
-                        $val =  $width if $val <  $width;
-                    }
-                }
-                $fcol_widths->[$j] = $val if $fcol_widths->[$j] < $val;
+                $fcol_widths->[$j]  = $wh->[0] if $fcol_widths->[$j] < $wh->[0];
+                $frow_heights->[$i] = $wh->[1] if !defined($frow_heights->[$i])
+                    || $frow_heights->[$i] < $wh->[1];
 
             } # col
         }
     }
     $self->{_draw}{frow_heights}  = $frow_heights;
-    #$self->{_draw}{fcell_heights} = $fcell_heights;
     $self->{_draw}{fcol_widths}   = $fcol_widths;
     $self->{_draw}{frows}         = $frows;
 
@@ -1040,7 +1049,8 @@ sub _should_draw_row_separator {
              || $self->{show_row_separator}==1);
 }
 
-# apply align/valign, padding, and then default fgcolor/bgcolor to text
+# apply align/valign, apply padding, apply default fgcolor/bgcolor to text,
+# truncate to specified cell's width & height
 sub _get_cell_lines {
     my $self = shift;
     #say "D: get_cell_lines ".join(", ", map{$_//""} @_);
@@ -1229,7 +1239,6 @@ sub draw {
     my $fcols = $self->{_draw}{fcols};
     my $frows = $self->{_draw}{frows};
     my $frow_heights    = $self->{_draw}{frow_heights};
-    #my $cell_heights    = $self->{_draw}{fcell_heights};
     my $frow_tpads      = $self->{_draw}{frow_tpads};
     my $frow_bpads      = $self->{_draw}{frow_bpads};
     my $fcol_lpads      = $self->{_draw}{fcol_lpads};
@@ -1367,7 +1376,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.10
+version 0.11
 
 =head1 SYNOPSIS
 
@@ -1733,6 +1742,12 @@ once.
 Internal note: During drawing, column names will be filtered and put into C<<
 $t->{_draw}{fcols} >>.
 
+=head2 column_wrap => BOOL
+
+Set column wrapping for all columns. Can be overriden by per-column C<wrap>
+style. By default column wrapping will only be done for text columns and when
+width is explicitly set to a positive value.
+
 =head2 use_color => BOOL
 
 Whether to output color. Default is taken from C<COLOR> environment variable, or
@@ -1945,7 +1960,7 @@ Get per-column style for column named/numbered C<$col>.
 
 Set per-column style(s) for column named/numbered C<$col>. Available values for
 C<$style>: C<align>, C<valign>, C<pad>, C<lpad>, C<rpad>, C<width>, C<formats>,
-C<fgcolor>, C<bgcolor>, C<type>.
+C<fgcolor>, C<bgcolor>, C<type>, C<wrap>.
 
 =head2 $t->get_row_style($row_num) => VAL
 
