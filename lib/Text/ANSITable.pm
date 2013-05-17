@@ -16,7 +16,7 @@ use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
 
-our $VERSION = '0.12'; # VERSION
+our $VERSION = '0.13'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -859,7 +859,8 @@ sub _adjust_column_widths {
     my $fcol_setwidths = $self->{_draw}{fcol_setwidths};
     my $fcol_detect    = $self->{_draw}{fcol_detect};
     my $fcol_widths    = $self->{_draw}{fcol_widths};
-    my (%acols);
+    my %acols;
+    my %origw;
     for my $i (0..@$fcols-1) {
         my $ci = $self->_colnum($fcols->[$i]);
         next if defined($fcol_setwidths->[$ci]) && $fcol_setwidths->[$ci]>0;
@@ -867,13 +868,19 @@ sub _adjust_column_widths {
         next unless $self->get_column_style($ci, 'wrap') //
             $self->{column_wrap} // $fcol_detect->[$ci]{wrap};
         $acols{$ci}++;
+        $origw{$ci} = $fcol_widths->[$ci];
     }
     return 0 unless %acols;
 
     # only do this if table width exceeds terminal width
-    require Term::Size;
-    my ($termw, $termh) = Term::Size::chars();
-    return 0 unless $termw;
+    my ($termw, $termh);
+    if ($ENV{COLUMNS}) {
+        $termw = $ENV{COLUMNS};
+    } else {
+        require Term::Size;
+        ($termw, $termh) = Term::Size::chars();
+    }
+    return 0 unless $termw > 0;
     my $excess = $self->{_draw}{table_width} - $termw;
     return 0 unless $excess > 0;
 
@@ -882,12 +889,29 @@ sub _adjust_column_widths {
     $w += $fcol_widths->[$_] for keys %acols;
     return 0 unless $w > 0;
     my $reduced = 0;
+  REDUCE:
+    while (1) {
+        my $has_reduced;
+        for my $ci (keys %acols) {
+            last REDUCE if $reduced >= $excess;
+            if ($fcol_widths->[$ci] > 30) {
+                $fcol_widths->[$ci]--;
+                $reduced++;
+                $has_reduced++;
+            }
+        }
+        last if !$has_reduced;
+    }
+
+    # reset widths
     for my $ci (keys %acols) {
-        $fcol_widths->[$ci] -= int($fcol_widths->[$ci]/$w * $excess);
-        $fcol_widths->[$ci] = 30 if $fcol_widths->[$ci] < 30;
         $fcol_setwidths->[$ci] = $fcol_widths->[$ci];
         $fcol_widths->[$ci] = 0; # reset
+    }
 
+    # wrap and set setwidths so it doesn't grow again during recalculate
+    for my $ci (keys %acols) {
+        next unless $origw{$ci} != $fcol_widths->[$ci];
         for (0..@$frows-1) {
             $frows->[$_][$ci] = ta_mbwrap(
                 $frows->[$_][$ci], $fcol_setwidths->[$ci]);
@@ -1544,7 +1568,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.12
+version 0.13
 
 =head1 SYNOPSIS
 
@@ -2170,6 +2194,10 @@ Can be used to set default value for the C<box_chars> attribute.
 =head2 UTF8 => BOOL
 
 Can be used to set default value for the C<utf8> attribute.
+
+=head2 COLUMNS => INT
+
+Can be used to override terminal width detection.
 
 =head2 ANSITABLE_BORDER_STYLE => STR
 

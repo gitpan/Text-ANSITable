@@ -3,7 +3,7 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.12
+    version 0.13
 
 SYNOPSIS
      use 5.010;
@@ -545,6 +545,9 @@ ENVIRONMENT
 
   UTF8 => BOOL
     Can be used to set default value for the "utf8" attribute.
+
+  COLUMNS => INT
+    Can be used to override terminal width detection.
 
   ANSITABLE_BORDER_STYLE => STR
     Can be used to set default value for "border_style" attribute.
