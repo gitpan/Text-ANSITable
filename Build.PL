@@ -19,7 +19,7 @@ my %module_build_args = (
     "Steven Haryanto <stevenharyanto\@gmail.com>"
   ],
   "dist_name" => "Text-ANSITable",
-  "dist_version" => "0.11",
+  "dist_version" => "0.12",
   "license" => "perl",
   "module_name" => "Text::ANSITable",
   "recommends" => {},
@@ -37,6 +37,7 @@ my %module_build_args = (
     "Parse::VarName" => 0,
     "SHARYANTO::Color::Util" => 0,
     "Term::Detect" => "0.02",
+    "Term::Size" => 0,
     "Text::ANSI::Util" => "0.08",
     "perl" => "5.010001"
   },
