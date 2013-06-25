@@ -1,6 +1,7 @@
 package Text::ANSITable;
 
 use 5.010001;
+use experimental 'smartmatch';
 use strict;
 use warnings;
 use Log::Any '$log';
@@ -16,7 +17,7 @@ use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
 
-our $VERSION = '0.13'; # VERSION
+our $VERSION = '0.14'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -1568,7 +1569,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.13
+version 0.14
 
 =head1 SYNOPSIS
 

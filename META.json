@@ -48,6 +48,7 @@
             "Term::Detect" : "0.02",
             "Term::Size" : "0",
             "Text::ANSI::Util" : "0.08",
+            "experimental" : "0",
             "perl" : "5.010001"
          }
       },
@@ -65,6 +66,6 @@
          "url" : "http://github.com/sharyanto/perl-Text-ANSITable"
       }
    },
-   "version" : "0.13"
+   "version" : "0.14"
 }
 
