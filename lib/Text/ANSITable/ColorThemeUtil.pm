@@ -8,7 +8,7 @@ require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(create_color_theme_transform);
 
-our $VERSION = '0.14'; # VERSION
+our $VERSION = '0.15'; # VERSION
 
 sub create_color_theme_transform {
     my ($basect, $func) = @_;
@@ -58,7 +58,7 @@ Text::ANSITable::ColorThemeUtil - Utility routines
 
 =head1 VERSION
 
-version 0.14
+version 0.15
 
 =head1 FUNCTIONS
 
