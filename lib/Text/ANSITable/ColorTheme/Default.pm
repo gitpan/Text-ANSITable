@@ -7,7 +7,7 @@ use warnings;
 use Data::Clone;
 use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
 
-our $VERSION = '0.15'; # VERSION
+our $VERSION = '0.16'; # VERSION
 
 our %color_themes = (
 
@@ -107,8 +107,8 @@ _
 1;
 # ABSTRACT: Default color themes
 
-
 __END__
+
 =pod
 
 =encoding utf-8
@@ -119,7 +119,7 @@ Text::ANSITable::ColorTheme::Default - Default color themes
 
 =head1 VERSION
 
-version 0.15
+version 0.16
 
 =head1 AUTHOR
 
@@ -172,4 +172,3 @@ C<border2_bg> to set background RGB colors.
 =back
 
 =cut
-

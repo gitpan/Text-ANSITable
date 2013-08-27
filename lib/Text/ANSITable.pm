@@ -15,7 +15,7 @@ use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
 
-our $VERSION = '0.15'; # VERSION
+our $VERSION = '0.16'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -72,9 +72,12 @@ has use_utf8 => (
     is      => 'rw',
     default => sub {
         my $self = shift;
-        $ENV{UTF8} //
-            $self->_detect_terminal->{unicode} //
-                (($ENV{LANG} // "") =~ /utf-?8/i ? 1:0);
+        return $ENV{UTF8} if defined $ENV{UTF8};
+        my $termuni = $self->_detect_terminal->{unicode};
+        if (defined $termuni) {
+            return $termuni && (($ENV{LANG} // "") =~ /utf-?8/i ? 1:0);
+        }
+        0;
     },
 );
 has columns => (
@@ -1555,8 +1558,8 @@ sub draw {
 1;
 #ABSTRACT: Create a nice formatted table using extended ASCII and ANSI colors
 
-
 __END__
+
 =pod
 
 =encoding utf-8
@@ -1567,7 +1570,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.15
+version 0.16
 
 =head1 SYNOPSIS
 
@@ -1591,6 +1594,8 @@ version 0.15
 
  # draw it!
  say $t->draw;
+
+Samples of output:
 
 =head1 DESCRIPTION
 
@@ -1624,6 +1629,20 @@ fine-grained options to customize appearance.
 It uses L<Moo> object system.
 
 =for Pod::Coverage ^(BUILD|draw_.+|color2ansi|get_color_reset|get_theme_color|get_border_char)$
+
+=begin HTML
+
+<p><img src="http://blogs.perl.org/users/steven_haryanto/ansitable1.png" /></p>
+
+<p><img src="http://blogs.perl.org/users/steven_haryanto/ansitable2.png" /></p>
+
+<p><img src="http://blogs.perl.org/users/steven_haryanto/ansitable3.png" /></p>
+
+<p><img src="http://blogs.perl.org/users/steven_haryanto/ansitable4.png" /></p>
+
+<p><img src="http://blogs.perl.org/users/steven_haryanto/ansitable5.png" /></p>
+
+=end HTML
 
 =head1 BORDER STYLES
 
@@ -2530,4 +2549,3 @@ the same terms as the Perl 5 programming language system itself.
 None are exported by default, but they are exportable.
 
 =cut
-

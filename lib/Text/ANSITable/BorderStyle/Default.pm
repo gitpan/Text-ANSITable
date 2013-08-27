@@ -5,7 +5,7 @@ use strict;
 use utf8;
 use warnings;
 
-our $VERSION = '0.15'; # VERSION
+our $VERSION = '0.16'; # VERSION
 
 our %border_styles = (
 
@@ -388,8 +388,8 @@ our %border_styles = (
 1;
 # ABSTRACT: Default border styles
 
-
 __END__
+
 =pod
 
 =encoding utf-8
@@ -400,7 +400,7 @@ Text::ANSITable::BorderStyle::Default - Default border styles
 
 =head1 VERSION
 
-version 0.15
+version 0.16
 
 =head1 AUTHOR
 
@@ -479,4 +479,3 @@ None are exported by default, but they are exportable.
 =back
 
 =cut
-

@@ -6,7 +6,7 @@ use warnings;
 
 use Text::ANSITable;
 
-our $VERSION = '0.15'; # VERSION
+our $VERSION = '0.16'; # VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -42,6 +42,7 @@ print $t->draw;
 #PODNAME: ansitable-list-border-styles
 
 __END__
+
 =pod
 
 =encoding utf-8
@@ -52,7 +53,7 @@ ansitable-list-border-styles - List available border styles for Text::ANSITable
 
 =head1 VERSION
 
-version 0.15
+version 0.16
 
 =head1 AUTHOR
 
@@ -66,4 +67,3 @@ This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-

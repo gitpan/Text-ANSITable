@@ -8,7 +8,7 @@ require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(create_color_theme_transform);
 
-our $VERSION = '0.15'; # VERSION
+our $VERSION = '0.16'; # VERSION
 
 sub create_color_theme_transform {
     my ($basect, $func) = @_;
@@ -46,8 +46,8 @@ sub create_color_theme_transform {
 1;
 # ABSTRACT: Utility routines
 
-
 __END__
+
 =pod
 
 =encoding utf-8
@@ -58,7 +58,7 @@ Text::ANSITable::ColorThemeUtil - Utility routines
 
 =head1 VERSION
 
-version 0.15
+version 0.16
 
 =head1 FUNCTIONS
 
@@ -96,4 +96,3 @@ the same terms as the Perl 5 programming language system itself.
 =head1 DESCRIPTION
 
 =cut
-
