@@ -3,13 +3,15 @@ abstract: 'Create a nice formatted table using extended ASCII and ANSI colors'
 author:
   - 'Steven Haryanto <stevenharyanto@gmail.com>'
 build_requires:
-  Module::Build: 0.3601
+  Capture::Tiny: 0
   Test::Exception: 0
   Test::More: 0.98
+  Test::Script: 1.05
+  blib: 0
 configure_requires:
-  Module::Build: 0.3601
+  ExtUtils::MakeMaker: 6.30
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 4.300035, CPAN::Meta::Converter version 2.131560'
+generated_by: 'Dist::Zilla version 4.300035, CPAN::Meta::Converter version 2.132140'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -28,11 +30,10 @@ requires:
   Parse::VarName: 0
   SHARYANTO::Color::Util: 0
   Term::Detect: 0.02
-  Term::Size: 0
   Text::ANSI::Util: 0.08
   experimental: 0
   perl: 5.010001
 resources:
   homepage: http://metacpan.org/release/Text-ANSITable
   repository: http://github.com/sharyanto/perl-Text-ANSITable
-version: 0.16
+version: 0.17

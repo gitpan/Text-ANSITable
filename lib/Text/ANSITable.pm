@@ -15,7 +15,7 @@ use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
 
-our $VERSION = '0.16'; # VERSION
+our $VERSION = '0.17'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -879,8 +879,10 @@ sub _adjust_column_widths {
     if ($ENV{COLUMNS}) {
         $termw = $ENV{COLUMNS};
     } else {
-        require Term::Size;
-        ($termw, $termh) = Term::Size::chars();
+        eval {
+            require Term::Size;
+            ($termw, $termh) = Term::Size::chars();
+        };
     }
     return 0 unless $termw > 0;
     my $excess = $self->{_draw}{table_width} - $termw;
@@ -1570,7 +1572,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.16
+version 0.17
 
 =head1 SYNOPSIS
 
