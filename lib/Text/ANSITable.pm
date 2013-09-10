@@ -6,6 +6,7 @@ use Moo;
 use experimental 'smartmatch';
 
 #use List::Util 'first';
+require Win32::Console::ANSI if $^O =~ /Win/;
 use Color::ANSI::Util qw(ansi16fg ansi16bg
                          ansi256fg ansi256bg
                          ansi24bfg ansi24bbg
@@ -15,7 +16,7 @@ use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
 
-our $VERSION = '0.17'; # VERSION
+our $VERSION = '0.18'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -1572,7 +1573,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.17
+version 0.18
 
 =head1 SYNOPSIS
 
