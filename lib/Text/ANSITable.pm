@@ -16,7 +16,7 @@ use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
 
-our $VERSION = '0.18'; # VERSION
+our $VERSION = '0.19'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -876,7 +876,7 @@ sub _adjust_column_widths {
     return 0 unless %acols;
 
     # only do this if table width exceeds terminal width
-    my ($termw, $termh);
+    my ($termw, $termh) = (0, 0);
     if ($ENV{COLUMNS}) {
         $termw = $ENV{COLUMNS};
     } else {
@@ -1573,7 +1573,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.18
+version 0.19
 
 =head1 SYNOPSIS
 

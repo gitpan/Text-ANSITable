@@ -7,7 +7,7 @@ use warnings;
 use Data::Clone;
 use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
 
-our $VERSION = '0.18'; # VERSION
+our $VERSION = '0.19'; # VERSION
 
 our %color_themes = (
 
@@ -119,7 +119,7 @@ Text::ANSITable::ColorTheme::Default - Default color themes
 
 =head1 VERSION
 
-version 0.18
+version 0.19
 
 =head1 AUTHOR
 
