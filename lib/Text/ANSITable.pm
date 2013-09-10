@@ -16,7 +16,7 @@ use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
 
-our $VERSION = '0.19'; # VERSION
+our $VERSION = '0.20'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -66,7 +66,9 @@ has color_depth => (
 has use_box_chars => (
     is      => 'rw',
     default => sub {
-        $ENV{BOX_CHARS} // 1;
+        return $ENV{BOX_CHARS} if defined $ENV{BOX_CHARS};
+        return 0 if $^O =~ /Win/; # Win32::Console::ANSI doesn't support this
+        1;
     },
 );
 has use_utf8 => (
@@ -879,11 +881,12 @@ sub _adjust_column_widths {
     my ($termw, $termh) = (0, 0);
     if ($ENV{COLUMNS}) {
         $termw = $ENV{COLUMNS};
-    } else {
-        eval {
-            require Term::Size;
-            ($termw, $termh) = Term::Size::chars();
-        };
+    } elsif (eval { require Term::Size }) {
+        ($termw, $termh) = Term::Size::chars();
+    } elsif ($^O =~ /Win/) {
+        # iirc correctly, printing at column 80 on windows moves cursor to the
+        # next line, so we reduce it by 1
+        $termw = 79;
     }
     return 0 unless $termw > 0;
     my $excess = $self->{_draw}{table_width} - $termw;
@@ -1573,7 +1576,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.19
+version 0.20
 
 =head1 SYNOPSIS
 
