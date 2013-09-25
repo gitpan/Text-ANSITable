@@ -12,7 +12,6 @@ dist.ini
 lib/Text/ANSITable.pm
 lib/Text/ANSITable/BorderStyle/Default.pm
 lib/Text/ANSITable/ColorTheme/Default.pm
-lib/Text/ANSITable/ColorThemeUtil.pm
 t/00-compile.t
 t/01-basics.t
 t/release-pod-coverage.t

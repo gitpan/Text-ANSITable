@@ -1,5 +1,12 @@
 Revision history for Text-ANSITable
 
+0.21    2013-09-25 (SHARYANTO)
+
+        - No functional changes. Extract some code to roles
+          SHARYANTO::Role::{BorderStyle,ColorTheme,TermAttrs} to be shared with
+          other modules, like Perinci::CmdLine.
+
+
 0.20    2013-09-11 (SHARYANTO)
 
         - More sensible defaults on Windows (80-1 column width, no box chars).
@@ -16,6 +23,8 @@ Revision history for Text-ANSITable
 
 
 0.17    2013-09-11 (SHARYANTO)
+
+        - Now works on Windows.
 
         - Make the use of Term::Size optional, to make this module work on
           Windows, because currently Term::Size fails to build on my Strawberry

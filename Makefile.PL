@@ -30,22 +30,22 @@ my %WriteMakefileArgs = (
     "DateTime" => 0,
     "JSON" => 0,
     "Log::Any" => 0,
-    "Module::List" => 0,
     "Moo" => 0,
     "Parse::VarName" => 0,
     "SHARYANTO::Color::Util" => 0,
-    "Term::Detect" => "0.02",
+    "SHARYANTO::Role::BorderStyle" => 0,
+    "SHARYANTO::Role::ColorTheme" => 0,
     "Text::ANSI::Util" => "0.08",
     "experimental" => 0
   },
   "TEST_REQUIRES" => {
-    "Capture::Tiny" => 0,
+    "File::Spec" => 0,
+    "IO::Handle" => 0,
+    "IPC::Open3" => 0,
     "Test::Exception" => 0,
-    "Test::More" => "0.98",
-    "Test::Script" => "1.05",
-    "blib" => 0
+    "Test::More" => "0.98"
   },
-  "VERSION" => "0.20",
+  "VERSION" => "0.21",
   "test" => {
     "TESTS" => "t/*.t"
   }
