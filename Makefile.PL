@@ -23,7 +23,6 @@ my %WriteMakefileArgs = (
   "LICENSE" => "perl",
   "NAME" => "Text::ANSITable",
   "PREREQ_PM" => {
-    "Color::ANSI::Util" => "0.03",
     "Data::Clone" => 0,
     "Data::Unixish::Apply" => "1.33",
     "Data::Unixish::ansi" => "0.02",
@@ -33,8 +32,8 @@ my %WriteMakefileArgs = (
     "Moo" => 0,
     "Parse::VarName" => 0,
     "SHARYANTO::Color::Util" => 0,
-    "SHARYANTO::Role::BorderStyle" => 0,
-    "SHARYANTO::Role::ColorTheme" => 0,
+    "SHARYANTO::Role::BorderStyle" => "0.58",
+    "SHARYANTO::Role::ColorTheme" => "0.58",
     "Text::ANSI::Util" => "0.08",
     "experimental" => 0
   },
@@ -45,7 +44,7 @@ my %WriteMakefileArgs = (
     "Test::Exception" => 0,
     "Test::More" => "0.98"
   },
-  "VERSION" => "0.21",
+  "VERSION" => "0.22",
   "test" => {
     "TESTS" => "t/*.t"
   }

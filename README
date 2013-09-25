@@ -3,7 +3,7 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.21
+    version 0.22
 
 SYNOPSIS
      use 5.010;
@@ -81,29 +81,7 @@ BORDER STYLES
     To create a new border style, create a module under
     "Text::ANSITable::BorderStyle::". Please see one of the existing border
     style modules for example, like Text::ANSITable::BorderStyle::Default.
-    Format for the "chars" specification key:
-
-     [
-       [A, b, C, D],  # 0
-       [E, F, G],     # 1
-       [H, i, J, K],  # 2
-       [L, M, N],     # 3
-       [O, p, Q, R],  # 4
-       [S, t, U, V],  # 5
-     ]
-
-     AbbbCbbbD        #0 Top border characters
-     E   F   G        #1 Vertical separators for header row
-     HiiiJiiiK        #2 Separator between header row and first data row
-     L   M   N        #3 Vertical separators for data row
-     OpppQpppR        #4 Separator between data rows
-     L   M   N        #3
-     StttUtttV        #5 Bottom border characters
-
-    Each character must have visual width of 1. But if A is an empty string,
-    the top border line will not be drawn. Likewise: if H is an empty
-    string, the header-data separator line will not be drawn; if S is an
-    empty string, bottom border line will not be drawn.
+    For more about border styles, refer to SHARYANTO::Role::BorderStyles.
 
 COLOR THEMES
     To list available color themes:
@@ -128,18 +106,7 @@ COLOR THEMES
     To create a new color theme, create a module under
     "Text::ANSITable::ColorTheme::". Please see one of the existing color
     theme modules for example, like Text::ANSITable::ColorTheme::Default.
-    Color for items must be specified as 6-hexdigit RGB value (like
-    "ff0088") or ANSI escape codes (e.g. "\e[31;1m" for bold red foregound
-    color, or "\e[48;5;226m" for lemon yellow background color). You can
-    also return a 2-element array containing RGB value for foreground and
-    background, respectively.
-
-    For flexibility, color can also be a coderef which should produce a
-    color value. This allows you to do, e.g. gradation border color, random
-    color, etc (see Text::ANSITable::ColorTheme::Demo). Code will be called
-    with "($self, %args)" where %args contains various information, like
-    "name" (the item name being requested). You can get the row position
-    from "$self->{_draw}{y}".
+    For more about color themes, refer to SHARYANTO::Role::ColorTheme.
 
 COLUMN WIDTHS
     By default column width is set just so it is enough to show the widest
