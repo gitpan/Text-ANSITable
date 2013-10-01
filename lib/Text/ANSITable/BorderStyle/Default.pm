@@ -5,7 +5,7 @@ use strict;
 use utf8;
 use warnings;
 
-our $VERSION = '0.22'; # VERSION
+our $VERSION = '0.23'; # VERSION
 
 our %border_styles = (
 
@@ -90,6 +90,43 @@ our %border_styles = (
         utf8 => 1,
     },
 
+    spacei_ascii => {
+        summary => 'Space, inner-only',
+        chars => [
+            ['','','',''],   # 0
+            ['',' ',''],     # 1
+            ['',' ',' ',''], # 2
+            ['',' ',''],     # 3
+            ['','-','-',''], # 4
+            ['','','',''],   # 5
+        ],
+    },
+
+    spacei_boxchar => {
+        summary => 'Space, inner-only',
+        chars => [
+            ['','','',''],   # 0
+            ['',' ',''],     # 1
+            ['',' ',' ',''], # 2
+            ['',' ',''],     # 3
+            ['','q','q',''], # 4
+            ['','','',''],   # 5
+        ],
+        box_chars => 1,
+    },
+
+    spacei_utf8 => {
+        summary => 'Space, inner-only',
+        chars => [
+            ['','','',''],   # 0
+            ['',' ',''],     # 1
+            ['',' ',' ',''], # 2
+            ['',' ',''],     # 3
+            ['','─','─',''], # 4
+            ['','','',''],   # 5
+        ],
+        utf8 => 1,
+    },
 
     # single
 
@@ -400,7 +437,7 @@ Text::ANSITable::BorderStyle::Default - Default border styles
 
 =head1 VERSION
 
-version 0.22
+version 0.23
 
 =head1 AUTHOR
 
@@ -475,6 +512,12 @@ None are exported by default, but they are exportable.
 =item * space_boxchar (Space as border)
 
 =item * space_utf8 (Space as border)
+
+=item * spacei_ascii (Space, inner-only)
+
+=item * spacei_boxchar (Space, inner-only)
+
+=item * spacei_utf8 (Space, inner-only)
 
 =back
 
