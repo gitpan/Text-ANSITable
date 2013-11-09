@@ -6,7 +6,7 @@ use warnings;
 
 use Text::ANSITable;
 
-our $VERSION = '0.23'; # VERSION
+our $VERSION = '0.24'; # VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -25,7 +25,7 @@ for my $name (sort {($all_bs->{$a}{utf8} ? 1:0)<=>($all_bs->{$b}{utf8} ? 1:0) ||
     my $selected = $name eq $t->border_style->{name};
     $t->add_row(
         [$name . ($selected ? " (*)" : ""), $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0],
-        {fgcolor=>$selected ? "aaaa00" : undef});
+        {fgcolor=>$selected && $t->use_color ? "aaaa00" : undef});
 
     if (!$utf8 && $bs->{utf8}) {
         $t->add_row_separator;
@@ -53,7 +53,24 @@ ansitable-list-border-styles - List available border styles for Text::ANSITable
 
 =head1 VERSION
 
-version 0.23
+version 0.24
+
+=head1 HOMEPAGE
+
+Please visit the project's homepage at L<https://metacpan.org/release/Text-ANSITable>.
+
+=head1 SOURCE
+
+Source repository is at L<https://github.com/sharyanto/perl-Text-ANSITable>.
+
+=head1 BUGS
+
+Please report any bugs or feature requests on the bugtracker website
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Text-ANSITable>
+
+When submitting a bug or request, please include a test-file or a
+patch to an existing test-file that illustrates the bug or desired
+feature.
 
 =head1 AUTHOR
 

@@ -4,7 +4,7 @@
       "Steven Haryanto <stevenharyanto@gmail.com>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Zilla version 4.300035, CPAN::Meta::Converter version 2.132140",
+   "generated_by" : "Dist::Zilla version 4.300038, CPAN::Meta::Converter version 2.132510",
    "license" : [
       "perl_5"
    ],
@@ -57,11 +57,16 @@
    },
    "release_status" : "stable",
    "resources" : {
-      "homepage" : "http://metacpan.org/release/Text-ANSITable",
+      "bugtracker" : {
+         "web" : "https://rt.cpan.org/Public/Dist/Display.html?Name=Text-ANSITable"
+      },
+      "homepage" : "https://metacpan.org/release/Text-ANSITable",
       "repository" : {
-         "url" : "http://github.com/sharyanto/perl-Text-ANSITable"
+         "type" : "git",
+         "url" : "git://github.com/sharyanto/perl-Text-ANSITable.git",
+         "web" : "https://github.com/sharyanto/perl-Text-ANSITable"
       }
    },
-   "version" : "0.23"
+   "version" : "0.24"
 }
 

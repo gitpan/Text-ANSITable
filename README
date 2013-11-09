@@ -3,7 +3,7 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.23
+    version 0.24
 
 SYNOPSIS
      use 5.010;
@@ -57,6 +57,9 @@ DESCRIPTION
 
     It uses Moo object system.
 
+FUNCTIONS
+    None are exported by default, but they are exportable.
+
 BORDER STYLES
     To list available border styles:
 
@@ -81,7 +84,7 @@ BORDER STYLES
     To create a new border style, create a module under
     "Text::ANSITable::BorderStyle::". Please see one of the existing border
     style modules for example, like Text::ANSITable::BorderStyle::Default.
-    For more about border styles, refer to SHARYANTO::Role::BorderStyles.
+    For more about border styles, refer to SHARYANTO::Role::BorderStyle.
 
 COLOR THEMES
     To list available color themes:
@@ -213,7 +216,7 @@ CELL COLORS
          $t->set_column_style('colname', fgcolor => 'fa8888');
          $t->set_column_style('colname', bgcolor => '202020');
 
-    *   per-row fgcolor and bgcolor styles
+    *   per-row "fgcolor" and "bgcolor" styles
 
         Example:
 
@@ -224,7 +227,7 @@ CELL COLORS
          $t->add_row($row, {fgcolor=>..., bgcolor=>...});
          $t->add_rows($rows, {bgcolor=>...});
 
-    *   per-cell fgcolor and bgcolor styles
+    *   per-cell "fgcolor" and "bgcolor" styles
 
         Example:
 
@@ -562,12 +565,40 @@ ENVIRONMENT
 
 FAQ
   General
-   My table looks garbled when viewed through pager like less!
-    It's because less escapes ANSI color codes. Try using "-R" option of
-    less to display ANSI color codes raw.
+   Output is too fancy! I just want to generate some plain (Text::ASCIITable-like) output to be pasted to my document.
+     $t->use_utf8(0);
+     $t->use_box_chars(0);
+     $t->use_color(0);
+     $t->border_style('Default::single_ascii');
 
-    Or, try not using boxchar border styles, use the utf8 or ascii version.
-    Try not using colors.
+    and you're good to go. Alternatively you can set environment UTF8=0,
+    BOX_CHARS=0, COLOR=0, and ANSITABLE_BORDER_STYLE=Default::single_ascii.
+
+   Why am I getting 'Wide character in print' warning?
+    You are probably (by default) using utf8 border styles, and you haven't
+    done something like this to your output:
+
+     binmode(STDOUT, ":utf8");
+
+    utf8 is by default used because Text::ANSITable detects that your
+    terminal can display Unicode characters. If you want to use non-utf8
+    borders instead, you can do:
+
+     $t->use_utf8(0);
+     $t->use_box_chars(0); # optional, if output is still garbled on your terminal
+
+    Alternatively you can set environment UTF8=0 and BOX_CHARS=0.
+
+   My table looks garbled when viewed through pager like less!
+    That's because less by default escapes ANSI color and box_char codes.
+    Try using "-R" option of less to display ANSI color codes raw.
+
+    Or, try not using colors and box_char border styles:
+
+     $t->use_color(0);
+     $t->use_box_chars(0);
+
+    Alternatively you can set environment COLOR=0 and BOX_CHARS=0.
 
    How do I hide some columns/rows when drawing?
     Use the "column_filter" and "row_filter" attributes. For example, given
@@ -671,7 +702,7 @@ FAQ
     Other color themes might use different colors.
 
    How do I force column to be of a certain data type?
-    For example, you have a column named deleted but want to display it as
+    For example, you have a column named "deleted" but want to display it as
     bool. You can do:
 
      $t->set_column_type(deleted => type => 'bool');
@@ -700,16 +731,15 @@ FAQ
     See Data::Unixish::bool for more details.
 
   Border
-   I'm getting 'Wide character in print' error message when I use utf8 border styles!
-    Add something like this first before printing to your output:
-
-     binmode(STDOUT, ":utf8");
-
    How to hide borders?
     There is currently no "show_border" attribute. Choose border styles like
     "Default::space_ascii" or "Default::none_utf8":
 
      $t->border_style("Default::none");
+
+   Why are there 'none_ascii' as well 'none_utf8' and 'none_boxchar' border styles?
+    Because of the row separator, that can still be drawn if
+    "add_row_separator()" is used. See next question.
 
    I want to hide borders, and I do not want row separators to be shown!
     The default is for separator lines to be drawn if drawn using
@@ -802,6 +832,21 @@ SEE ALSO
 
     Modules used: Text::ANSI::Util, Color::ANSI::Util.
 
+HOMEPAGE
+    Please visit the project's homepage at
+    <https://metacpan.org/release/Text-ANSITable>.
+
+SOURCE
+    Source repository is at
+    <https://github.com/sharyanto/perl-Text-ANSITable>.
+
+BUGS
+    Please report any bugs or feature requests on the bugtracker website
+    <https://rt.cpan.org/Public/Dist/Display.html?Name=Text-ANSITable>
+
+    When submitting a bug or request, please include a test-file or a patch
+    to an existing test-file that illustrates the bug or desired feature.
+
 AUTHOR
     Steven Haryanto <stevenharyanto@gmail.com>
 
@@ -810,7 +855,4 @@ COPYRIGHT AND LICENSE
 
     This is free software; you can redistribute it and/or modify it under
     the same terms as the Perl 5 programming language system itself.
-
-FUNCTIONS
-    None are exported by default, but they are exportable.
 

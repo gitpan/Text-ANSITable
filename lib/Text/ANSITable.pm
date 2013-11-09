@@ -10,7 +10,7 @@ use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
 
-our $VERSION = '0.23'; # VERSION
+our $VERSION = '0.24'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -1306,7 +1306,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.23
+version 0.24
 
 =head1 SYNOPSIS
 
@@ -1364,6 +1364,11 @@ fine-grained options to customize appearance.
 
 It uses L<Moo> object system.
 
+=head1 FUNCTIONS
+
+
+None are exported by default, but they are exportable.
+
 =for Pod::Coverage ^(BUILD|draw_.+|get_color_reset|get_border_char)$
 
 =begin HTML
@@ -1387,7 +1392,7 @@ To list available border styles:
  say $_ for $t->list_border_styles;
 
 Or you can also try out borders using the provided
-B<ansitable-list-border-styles> script. Or, you can also view the documentation
+L<ansitable-list-border-styles> script. Or, you can also view the documentation
 for the C<Text::ANSITable::BorderStyle::*> modules, where border styles are
 searched.
 
@@ -1405,7 +1410,7 @@ default.
 To create a new border style, create a module under
 C<Text::ANSITable::BorderStyle::>. Please see one of the existing border style
 modules for example, like L<Text::ANSITable::BorderStyle::Default>. For more
-about border styles, refer to L<SHARYANTO::Role::BorderStyles>.
+about border styles, refer to L<SHARYANTO::Role::BorderStyle>.
 
 =head1 COLOR THEMES
 
@@ -1413,7 +1418,7 @@ To list available color themes:
 
  say $_ for $t->list_color_themes;
 
-Or you can also run the provided B<ansitable-list-color-themes> script. Or you
+Or you can also run the provided L<ansitable-list-color-themes> script. Or you
 can view the documentation for the C<Text::ANSITable::ColorTheme::*> modules
 where color themes are searched.
 
@@ -1559,7 +1564,7 @@ Example:
  $t->set_column_style('colname', fgcolor => 'fa8888');
  $t->set_column_style('colname', bgcolor => '202020');
 
-=item * per-row F<fgcolor> and B<bgcolor> styles
+=item * per-row C<fgcolor> and C<bgcolor> styles
 
 Example:
 
@@ -1570,7 +1575,7 @@ When adding row/rows:
  $t->add_row($row, {fgcolor=>..., bgcolor=>...});
  $t->add_rows($rows, {bgcolor=>...});
 
-=item * per-cell F<fgcolor> and B<bgcolor> styles
+=item * per-cell C<fgcolor> and C<bgcolor> styles
 
 Example:
 
@@ -1973,13 +1978,43 @@ background color.
 
 =head2 General
 
+=head3 Output is too fancy! I just want to generate some plain (Text::ASCIITable-like) output to be pasted to my document.
+
+ $t->use_utf8(0);
+ $t->use_box_chars(0);
+ $t->use_color(0);
+ $t->border_style('Default::single_ascii');
+
+and you're good to go. Alternatively you can set environment UTF8=0,
+BOX_CHARS=0, COLOR=0, and ANSITABLE_BORDER_STYLE=Default::single_ascii.
+
+=head3 Why am I getting 'Wide character in print' warning?
+
+You are probably (by default) using utf8 border styles, and you haven't done
+something like this to your output:
+
+ binmode(STDOUT, ":utf8");
+
+utf8 is by default used because Text::ANSITable detects that your terminal can
+display Unicode characters. If you want to use non-utf8 borders instead, you can
+do:
+
+ $t->use_utf8(0);
+ $t->use_box_chars(0); # optional, if output is still garbled on your terminal
+
+Alternatively you can set environment UTF8=0 and BOX_CHARS=0.
+
 =head3 My table looks garbled when viewed through pager like B<less>!
 
-It's because B<less> escapes ANSI color codes. Try using C<-R> option of B<less>
-to display ANSI color codes raw.
+That's because B<less> by default escapes ANSI color and box_char codes. Try
+using C<-R> option of B<less> to display ANSI color codes raw.
 
-Or, try not using boxchar border styles, use the utf8 or ascii version. Try not
-using colors.
+Or, try not using colors and box_char border styles:
+
+ $t->use_color(0);
+ $t->use_box_chars(0);
+
+Alternatively you can set environment COLOR=0 and BOX_CHARS=0.
 
 =head3 How do I hide some columns/rows when drawing?
 
@@ -2089,7 +2124,7 @@ Other color themes might use different colors.
 
 =head3 How do I force column to be of a certain data type?
 
-For example, you have a column named B<deleted> but want to display it as
+For example, you have a column named C<deleted> but want to display it as
 B<bool>. You can do:
 
  $t->set_column_type(deleted => type => 'bool');
@@ -2122,18 +2157,17 @@ See L<Data::Unixish::bool> for more details.
 
 =head2 Border
 
-=head3 I'm getting 'Wide character in print' error message when I use utf8 border styles!
-
-Add something like this first before printing to your output:
-
- binmode(STDOUT, ":utf8");
-
 =head3 How to hide borders?
 
 There is currently no C<show_border> attribute. Choose border styles like
 C<Default::space_ascii> or C<Default::none_utf8>:
 
  $t->border_style("Default::none");
+
+=head3 Why are there 'none_ascii' as well 'none_utf8' and 'none_boxchar' border styles?
+
+Because of the row separator, that can still be drawn if C<add_row_separator()>
+is used. See next question.
 
 =head3 I want to hide borders, and I do not want row separators to be shown!
 
@@ -2236,6 +2270,23 @@ L<Table::Simple> (uses Moose).
 
 Modules used: L<Text::ANSI::Util>, L<Color::ANSI::Util>.
 
+=head1 HOMEPAGE
+
+Please visit the project's homepage at L<https://metacpan.org/release/Text-ANSITable>.
+
+=head1 SOURCE
+
+Source repository is at L<https://github.com/sharyanto/perl-Text-ANSITable>.
+
+=head1 BUGS
+
+Please report any bugs or feature requests on the bugtracker website
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Text-ANSITable>
+
+When submitting a bug or request, please include a test-file or a
+patch to an existing test-file that illustrates the bug or desired
+feature.
+
 =head1 AUTHOR
 
 Steven Haryanto <stevenharyanto@gmail.com>
@@ -2246,10 +2297,5 @@ This software is copyright (c) 2013 by Steven Haryanto.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
-
-=head1 FUNCTIONS
-
-
-None are exported by default, but they are exportable.
 
 =cut
