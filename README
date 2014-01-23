@@ -3,7 +3,7 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.24
+    version 0.25
 
 SYNOPSIS
      use 5.010;
@@ -57,9 +57,6 @@ DESCRIPTION
 
     It uses Moo object system.
 
-FUNCTIONS
-    None are exported by default, but they are exportable.
-
 BORDER STYLES
     To list available border styles:
 
@@ -96,7 +93,7 @@ COLOR THEMES
     modules where color themes are searched.
 
     To choose a color theme, either set the "color_theme" attribute to an
-    available color theme or a border specification directly.
+    available color theme or a color theme specification directly.
 
      $t->color_theme("Default::default_nogradation");
      $t->color_theme("Foo::bar");    # dies, no such color theme
@@ -575,19 +572,10 @@ FAQ
     BOX_CHARS=0, COLOR=0, and ANSITABLE_BORDER_STYLE=Default::single_ascii.
 
    Why am I getting 'Wide character in print' warning?
-    You are probably (by default) using utf8 border styles, and you haven't
-    done something like this to your output:
+    You are probably using a utf8 border style, and you haven't done
+    something like this to your output:
 
      binmode(STDOUT, ":utf8");
-
-    utf8 is by default used because Text::ANSITable detects that your
-    terminal can display Unicode characters. If you want to use non-utf8
-    borders instead, you can do:
-
-     $t->use_utf8(0);
-     $t->use_box_chars(0); # optional, if output is still garbled on your terminal
-
-    Alternatively you can set environment UTF8=0 and BOX_CHARS=0.
 
    My table looks garbled when viewed through pager like less!
     That's because less by default escapes ANSI color and box_char codes.
@@ -851,7 +839,7 @@ AUTHOR
     Steven Haryanto <stevenharyanto@gmail.com>
 
 COPYRIGHT AND LICENSE
-    This software is copyright (c) 2013 by Steven Haryanto.
+    This software is copyright (c) 2014 by Steven Haryanto.
 
     This is free software; you can redistribute it and/or modify it under
     the same terms as the Perl 5 programming language system itself.

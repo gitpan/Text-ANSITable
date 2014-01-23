@@ -10,7 +10,7 @@ use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
 
-our $VERSION = '0.24'; # VERSION
+our $VERSION = '0.25'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -167,30 +167,39 @@ sub BUILD {
     # pick a default border style
     unless ($self->{border_style}) {
         my $bs;
-        my $force_utf8;
+
+        my $use_utf8 = $self->{use_utf8};
+
+        # even though Term::Detect::Software decides that linux virtual console
+        # does not support unicode, it actually can display some uni characters
+        # like single borders, so we use it as the default here instead of
+        # singleo_ascii (linux vc doesn't seem to support box_chars).
+        my $linux_vc = $self->detect_terminal->{emulator_engine} eq 'linux' &&
+            !defined($ENV{UTF8});
+        if ($linux_vc) {
+            $use_utf8 = 1;
+            $bs = 'Default::singleo_utf8';
+        }
+        # use statement modifier style to avoid block and make local work
+        local $self->{use_utf8} = 1 if $linux_vc;
+
+        # we only default to utf8 border if user has set something like
+        # binmode(STDOUT, ":utf8") to avoid 'Wide character in print' warning.
+        require PerlIO;
+        my @layers = PerlIO::get_layers(STDOUT);
+        $use_utf8 = 0 unless 'utf8' ~~ @layers;
+
         if (defined $ENV{ANSITABLE_BORDER_STYLE}) {
             $bs = $ENV{ANSITABLE_BORDER_STYLE};
-        } elsif ($self->detect_terminal->{emulator_engine} eq 'linux' &&
-                     !defined($ENV{UTF8})) {
-            # even though Term::Detect::Software decides that linux virtual
-            # console does not support unicode, it actually can display some uni
-            # characters like single borders, so we use it as the default here
-            # instead of singleo_ascii (linux vc doesn't seem to support
-            # box_chars).
-            $force_utf8 = 1;
-            $bs = 'Default::singleo_utf8';
-        } elsif ($self->{use_utf8}) {
-            $bs = 'Default::bricko';
+        } elsif ($use_utf8) {
+            $bs //= 'Default::bricko';
         } elsif ($self->{use_box_chars}) {
             $bs = 'Default::singleo_boxchar';
         } else {
             $bs = 'Default::singleo_ascii';
         }
 
-        {
-            local $self->{use_utf8} = 1 if $force_utf8;
-            $self->border_style($bs);
-        }
+        $self->border_style($bs);
     }
 
     # pick a default color theme
@@ -1298,7 +1307,7 @@ __END__
 
 =pod
 
-=encoding utf-8
+=encoding UTF-8
 
 =head1 NAME
 
@@ -1306,7 +1315,7 @@ Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI co
 
 =head1 VERSION
 
-version 0.24
+version 0.25
 
 =head1 SYNOPSIS
 
@@ -1364,11 +1373,6 @@ fine-grained options to customize appearance.
 
 It uses L<Moo> object system.
 
-=head1 FUNCTIONS
-
-
-None are exported by default, but they are exportable.
-
 =for Pod::Coverage ^(BUILD|draw_.+|get_color_reset|get_border_char)$
 
 =begin HTML
@@ -1423,7 +1427,7 @@ can view the documentation for the C<Text::ANSITable::ColorTheme::*> modules
 where color themes are searched.
 
 To choose a color theme, either set the C<color_theme> attribute to an available
-color theme or a border specification directly.
+color theme or a color theme specification directly.
 
  $t->color_theme("Default::default_nogradation");
  $t->color_theme("Foo::bar");    # dies, no such color theme
@@ -1990,19 +1994,10 @@ BOX_CHARS=0, COLOR=0, and ANSITABLE_BORDER_STYLE=Default::single_ascii.
 
 =head3 Why am I getting 'Wide character in print' warning?
 
-You are probably (by default) using utf8 border styles, and you haven't done
-something like this to your output:
+You are probably using a utf8 border style, and you haven't done something like
+this to your output:
 
  binmode(STDOUT, ":utf8");
-
-utf8 is by default used because Text::ANSITable detects that your terminal can
-display Unicode characters. If you want to use non-utf8 borders instead, you can
-do:
-
- $t->use_utf8(0);
- $t->use_box_chars(0); # optional, if output is still garbled on your terminal
-
-Alternatively you can set environment UTF8=0 and BOX_CHARS=0.
 
 =head3 My table looks garbled when viewed through pager like B<less>!
 
@@ -2280,8 +2275,7 @@ Source repository is at L<https://github.com/sharyanto/perl-Text-ANSITable>.
 
 =head1 BUGS
 
-Please report any bugs or feature requests on the bugtracker website
-L<https://rt.cpan.org/Public/Dist/Display.html?Name=Text-ANSITable>
+Please report any bugs or feature requests on the bugtracker website L<https://rt.cpan.org/Public/Dist/Display.html?Name=Text-ANSITable>
 
 When submitting a bug or request, please include a test-file or a
 patch to an existing test-file that illustrates the bug or desired
@@ -2293,7 +2287,7 @@ Steven Haryanto <stevenharyanto@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2013 by Steven Haryanto.
+This software is copyright (c) 2014 by Steven Haryanto.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
