@@ -7,20 +7,19 @@ use experimental 'smartmatch';
 
 #use List::Util qw(first);
 use Scalar::Util 'looks_like_number';
-use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
-                        ta_mbwrap);
 
-our $VERSION = '0.26'; # VERSION
+our $VERSION = '0.27'; # VERSION
 
 my $ATTRS = [qw(
 
-                  use_color color_depth use_box_chars use_utf8 columns rows
-                  column_filter row_filter show_row_separator show_header
-                  show_header cell_width cell_height cell_pad cell_lpad
-                  cell_rpad cell_vpad cell_tpad cell_bpad cell_fgcolor
-                  cell_bgcolor cell_align cell_valign header_align header_valign
-                  header_vpad header_tpad header_bpad header_fgcolor
-                  header_bgcolor color_theme_args border_style_args
+                  use_color color_depth use_box_chars use_utf8 handle_widechar
+                  handle_multiline handle_color columns rows column_filter
+                  row_filter show_row_separator show_header show_header
+                  cell_width cell_height cell_pad cell_lpad cell_rpad cell_vpad
+                  cell_tpad cell_bpad cell_fgcolor cell_bgcolor cell_align
+                  cell_valign header_align header_valign header_vpad header_tpad
+                  header_bpad header_fgcolor header_bgcolor color_theme_args
+                  border_style_args
 
           )];
 my $STYLES = $ATTRS;
@@ -41,6 +40,15 @@ my $CELL_STYLES = [qw(
 
                 )];
 
+has handle_color => (
+    is      => 'rw',
+);
+has handle_multiline => (
+    is      => 'rw',
+);
+has handle_widechar => (
+    is      => 'rw',
+);
 has columns => (
     is      => 'rw',
     default => sub { [] },
@@ -185,9 +193,11 @@ sub BUILD {
 
         # we only default to utf8 border if user has set something like
         # binmode(STDOUT, ":utf8") to avoid 'Wide character in print' warning.
-        require PerlIO;
-        my @layers = PerlIO::get_layers(STDOUT);
-        $use_utf8 = 0 unless 'utf8' ~~ @layers;
+        unless (defined $ENV{UTF8}) {
+            require PerlIO;
+            my @layers = PerlIO::get_layers(STDOUT);
+            $use_utf8 = 0 unless 'utf8' ~~ @layers;
+        }
 
         if (defined $ENV{ANSITABLE_BORDER_STYLE}) {
             $bs = $ENV{ANSITABLE_BORDER_STYLE};
@@ -375,7 +385,7 @@ sub _detect_column_types {
       DETECT:
         {
             last DETECT if $type;
-            if ($col =~ /\?/) {
+            if ($col =~ /^(can|is|has|does)_|\?$/) {
                 $type = 'bool';
                 last DETECT;
             }
@@ -508,7 +518,7 @@ sub _opt_calc_width_height {
 
     my $wh;
     if ($calcw) {
-        $wh = ta_mbswidth_height($text);
+        $wh = $self->{_func_width_height}->($text);
         $wh->[0] = -$setw if defined($setw) && $setw<0 && $wh->[0] < -$setw;
         $wh->[1] = $seth if !$calch;
         $wh->[1] = -$seth if defined($seth) && $seth<0 && $wh->[1] < -$seth;
@@ -519,6 +529,7 @@ sub _opt_calc_width_height {
     } else {
         $wh = [$setw, $seth];
     }
+    #say "D:_opt_calc_width_height(", $frow_num//"undef", ", $col) = $wh->[0], $wh->[1]";
     $wh;
 }
 
@@ -725,7 +736,7 @@ sub _adjust_column_widths {
     for my $ci (keys %acols) {
         next unless $origw{$ci} != $fcol_widths->[$ci];
         for (0..@$frows-1) {
-            $frows->[$_][$ci] = ta_mbwrap(
+            $frows->[$_][$ci] = $self->{_func_wrap}->(
                 $frows->[$_][$ci], $fcol_setwidths->[$ci]);
         }
     }
@@ -735,6 +746,89 @@ sub _adjust_column_widths {
     $self->_calc_table_width_height;
 
     1;
+}
+
+sub _pick_str_functions {
+    my $self = shift;
+
+    my $fcols = $self->{_draw}{fcols};
+    my $cols  = $self->{columns};
+    my $rows  = $self->{rows}; # frows not yet available
+
+    # check to see if content has color, so we can optimize by using simpler
+    # function if content does not have some/any of these. XXX note that this is
+    # not really proper atm, because we haven't applied cell formats and formats
+    # might change content.
+    my $ct_wc = 0;
+    my $ct_ml = 0;
+    my $ct_col = 0;
+
+    if ($self->{show_header} && @$fcols) {
+        my %seen;
+        for my $i (0..@$fcols-1) {
+            my $ci = $self->_colnum($fcols->[$i]);
+            next if $seen{$i}++;
+            unless ($ct_wc) {
+                $ct_wc = 1 if $cols->[$i] =~ /[[:^ascii:]]/o;
+            }
+            unless ($ct_ml) {
+                $ct_ml = 1 if $cols->[$i] =~ /\n/o;
+            }
+            unless ($ct_col) {
+                $ct_col = 1 if $cols->[$i] =~ /\e\[/o;
+            }
+        }
+    }
+
+    if (@$fcols) {
+        for my $i (0..@$rows-1) {
+            my %seen;
+            for my $j (0..@$cols-1) {
+                next unless $cols->[$j] ~~ $fcols;
+                next if $seen{$cols->[$j]}++;
+                unless ($ct_wc) {
+                    $ct_wc = 1 if defined($rows->[$i][$j]) &&
+                        $rows->[$i][$j] =~ /[[:^ascii:]]/o;
+                }
+                unless ($ct_ml) {
+                    $ct_ml = 1 if defined($rows->[$i][$j]) &&
+                        $rows->[$i][$j] =~ /\n/o;
+                }
+                unless ($ct_col) {
+                    $ct_col = 1 if defined($rows->[$i][$j]) &&
+                        $rows->[$i][$j] =~ /\e\[/o;
+                }
+            }
+        }
+    }
+
+    my $wc  = ($self->{handle_widechar} // $ct_wc) && $self->{use_utf8};
+    my $ml  = ($self->{handle_multiline} // $ct_ml);
+    my $col = ($self->{handle_color} // $ct_col) && $self->{use_color};
+    #say "D:wc=$wc, ml=$ml, col=$col";
+
+    if ($col && $wc) {
+        require Text::ANSI::Util;
+        $self->{_func_wrap} = \&Text::ANSI::Util::ta_mbwrap;
+        $self->{_func_pad}  = \&Text::ANSI::Util::ta_mbpad;
+        $self->{_func_width_height} = \&Text::ANSI::Util::ta_mbswidth_height;
+    } elsif ($col) {
+        require Text::ANSI::Util;
+        $self->{_func_wrap} = \&Text::ANSI::Util::ta_wrap;
+        $self->{_func_pad}  = \&Text::ANSI::Util::ta_pad;
+        $self->{_func_width_height} = \&Text::ANSI::Util::ta_length_height;
+    } elsif ($wc) {
+        require Text::WideChar::Util;
+        $self->{_func_wrap} = \&Text::WideChar::Util::mbwrap;
+        $self->{_func_pad}  = \&Text::WideChar::Util::mbpad;
+        $self->{_func_width_height} = \&Text::WideChar::Util::mbswidth_height;
+    } else {
+        require SHARYANTO::String::Util;
+        require Text::WideChar::Util;
+        $self->{_func_wrap} = \&Text::WideChar::Util::wrap;
+        $self->{_func_pad}  = \&SHARYANTO::String::Util::pad;
+        $self->{_func_width_height} = \&Text::WideChar::Util::length_height;
+    }
 }
 
 # filter columns & rows, calculate widths/paddings, format data, put the results
@@ -770,6 +864,8 @@ sub _prepare_draw {
     } else {
         $fcols = $cols;
     }
+    $self->{_draw}{fcols} = $fcols;
+    $self->_pick_str_functions;
 
     my $fcol_setwidths  = []; # index = [colnum], from cell_width/col width
     my $frow_setheights = []; # index = [frownum], from cell_height/row height
@@ -834,7 +930,6 @@ sub _prepare_draw {
             push @$frow_orig_indices, $i;
         }
     }
-    $self->{_draw}{fcols}             = $fcols;
     $self->{_draw}{frows}             = $frows;
     $self->{_draw}{frow_separators}   = $frow_separators;
     $self->{_draw}{frow_tpads}        = $frow_tpads;
@@ -865,7 +960,7 @@ sub _prepare_draw {
                      defined($fcol_setwidths->[$i]) &&
                          $fcol_setwidths->[$i]>0) {
                 for (0..@$frows-1) {
-                    $frows->[$_][$i] = ta_mbwrap(
+                    $frows->[$_][$i] = $self->{_func_wrap}->(
                         $frows->[$_][$i], $fcol_setwidths->[$i]);
                 }
             }
@@ -974,7 +1069,9 @@ sub draw_border_char {
     $self->draw_str($self->{_draw}{set_line_draw_mode});
     while (my ($y, $x, $n) = splice @_, 0, 3) {
         $n //= 1;
-        if ($args) {
+        if (!$self->{use_color}) {
+            # save some CPU cycles
+        } elsif ($args) {
             $self->draw_theme_color('border',
                                     {border=>[$y, $x, $n], %$args});
         } else {
@@ -1029,7 +1126,8 @@ sub _get_cell_lines {
         ($align =~ /^[Rr]/o ? "left" : "center");
 
     for (@lines) {
-        $_ = (" "x$lpad) . ta_mbpad($_, $width, $pad, " ", 1) . (" "x$rpad);
+        $_ = (" "x$lpad) . $self->{_func_pad}->($_, $width, $pad, " ", 1) .
+            (" "x$rpad);
         # add default color
         s/\e\[0m(?=.)/\e[0m$color/g if length($color);
         $_ = $color . $_;
@@ -1170,13 +1268,14 @@ sub _get_data_cell_lines {
     my $bpad = $self->{_draw}{frow_bpads}[$y];
 
     #say "D:oy=$oy, y=$y, x=$x, fgcolor=$fgcolor, bgcolor=$bgcolor";
-    $self->_get_cell_lines(
+    my $res = $self->_get_cell_lines(
         $cell,                            # text
         $self->{_draw}{fcol_widths}[$x],  # width
         $self->{_draw}{frow_heights}[$y], # height
         $align, $valign,                  # aligns
         $lpad, $rpad, $tpad, $bpad,       # paddings
         $fgcolor . $bgcolor);
+    $res;
 }
 
 sub draw {
@@ -1324,7 +1423,7 @@ sub draw {
 }
 
 1;
-#ABSTRACT: Create a nice formatted table using extended ASCII and ANSI colors
+#ABSTRACT: Create nice formatted tables using extended ASCII and ANSI colors
 
 __END__
 
@@ -1334,11 +1433,11 @@ __END__
 
 =head1 NAME
 
-Text::ANSITable - Create a nice formatted table using extended ASCII and ANSI colors
+Text::ANSITable - Create nice formatted tables using extended ASCII and ANSI colors
 
 =head1 VERSION
 
-version 0.26
+version 0.27
 
 =head1 SYNOPSIS
 
@@ -1396,7 +1495,7 @@ fine-grained options to customize appearance.
 
 It uses L<Moo> object system.
 
-=for Pod::Coverage ^(BUILD|draw_.+|get_color_reset|get_border_char)$
+=for Pod::Coverage ^(BUILD|draw_.+|get_color_reset|get_border_char|handle_.+)$
 
 =begin HTML
 
@@ -1536,11 +1635,11 @@ order of precedence, from lowest):
 
 =over
 
-=item * table-level C<row_vpad> attribute
+=item * table-level C<cell_vpad> attribute
 
 This sets top and bottom padding for all rows.
 
-=item * table-level C<row_tpad>/C<row_bpad> attributes
+=item * table-level C<cell_tpad>/C<cell_bpad> attributes
 
 They set top/bottom padding separately for all rows.
 
@@ -1727,10 +1826,6 @@ Whether to use Unicode (UTF8) characters. Default is taken from C<UTF8>
 environment variable, or detected using L<Term::Detect>, or guessed via L<LANG>
 environment variable. If C<use_utf8> is set to 0, an attempt to select a border
 style that uses Unicode characters will result in an exception.
-
-(In the future, setting C<use_utf8> to 0 might opt the module to use the
-non-"mb_*" version of functions from L<Text::ANSI::Util>, e.g. C<ta_wrap()>
-instead of C<ta_mbwrap()>, and so on).
 
 =head2 border_style => HASH
 
@@ -2147,7 +2242,7 @@ Other color themes might use different colors.
 For example, you have a column named C<deleted> but want to display it as
 B<bool>. You can do:
 
- $t->set_column_type(deleted => type => 'bool');
+ $t->set_column_style(deleted => type => 'bool');
 
 =head3 How do I wrap long text?
 
@@ -2212,6 +2307,11 @@ whatsoever:
    row1
    row2
    row3
+
+=head3 I want to separate each row with a line!
+
+Set C<show_row_separator> to 1, or alternatively, set
+C<ANSITABLE_STYLE='{"show_row_separator":1}>.
 
 =head2 Color
 

@@ -1,9 +1,9 @@
 NAME
-    Text::ANSITable - Create a nice formatted table using extended ASCII and
+    Text::ANSITable - Create nice formatted tables using extended ASCII and
     ANSI colors
 
 VERSION
-    version 0.26
+    version 0.27
 
 SYNOPSIS
      use 5.010;
@@ -162,11 +162,11 @@ ROW VERTICAL PADDING
     Default vertical padding is 0. This can be changed in the following ways
     (in order of precedence, from lowest):
 
-    *   table-level "row_vpad" attribute
+    *   table-level "cell_vpad" attribute
 
         This sets top and bottom padding for all rows.
 
-    *   table-level "row_tpad"/"row_bpad" attributes
+    *   table-level "cell_tpad"/"cell_bpad" attributes
 
         They set top/bottom padding separately for all rows.
 
@@ -336,10 +336,6 @@ ATTRIBUTES
     LANG environment variable. If "use_utf8" is set to 0, an attempt to
     select a border style that uses Unicode characters will result in an
     exception.
-
-    (In the future, setting "use_utf8" to 0 might opt the module to use the
-    non-"mb_*" version of functions from Text::ANSI::Util, e.g. "ta_wrap()"
-    instead of "ta_mbwrap()", and so on).
 
   border_style => HASH
     Border style specification to use.
@@ -695,7 +691,7 @@ FAQ
     For example, you have a column named "deleted" but want to display it as
     bool. You can do:
 
-     $t->set_column_type(deleted => type => 'bool');
+     $t->set_column_style(deleted => type => 'bool');
 
    How do I wrap long text?
     The "wrap" dux function can be used to wrap text (see:
@@ -753,6 +749,10 @@ FAQ
        row1
        row2
        row3
+
+   I want to separate each row with a line!
+    Set "show_row_separator" to 1, or alternatively, set
+    "ANSITABLE_STYLE='{"show_row_separator":1}".
 
   Color
    How to disable colors?
