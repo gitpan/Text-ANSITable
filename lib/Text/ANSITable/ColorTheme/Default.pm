@@ -4,10 +4,10 @@ use 5.010;
 use strict;
 use warnings;
 
-use Data::Clone;
+use Function::Fallback::CoreOrPP qw(clone);
 use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
 
-our $VERSION = '0.27'; # VERSION
+our $VERSION = '0.28'; # VERSION
 
 our %color_themes = (
 
@@ -122,7 +122,7 @@ Text::ANSITable::ColorTheme::Default - Default color themes
 
 =head1 VERSION
 
-version 0.27
+version 0.28
 
 =head1 HOMEPAGE
 

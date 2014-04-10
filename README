@@ -3,7 +3,7 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.27
+    version 0.28
 
 SYNOPSIS
      use 5.010;
@@ -817,8 +817,11 @@ SEE ALSO
     "Text::ANSITable::ColorTheme::*" modules.
 
     Other table-formatting modules: Text::Table, Text::SimpleTable,
-    Text::ASCIITable (which I usually used), Text::UnicodeTable::Simple,
-    Table::Simple (uses Moose).
+    Text::ASCIITable, Text::UnicodeTable::Simple, Table::Simple (uses
+    Moose). There are a couple of "extensions" for Text::ASCIITable:
+    Text::ASCIITable::TW, Text::ASCIITable::Wrap; Text::ANSITable can be an
+    alternative for all those modules since it can already handle
+    wide-characters, multiline text in cells.
 
     Modules used: Text::ANSI::Util, Color::ANSI::Util.
 
