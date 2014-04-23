@@ -5,7 +5,7 @@ use strict;
 use utf8;
 use warnings;
 
-our $VERSION = '0.29'; # VERSION
+our $VERSION = '0.30'; # VERSION
 
 our %border_styles = (
 
@@ -437,7 +437,7 @@ Text::ANSITable::BorderStyle::Default - Default border styles
 
 =head1 VERSION
 
-version 0.29
+version 0.30
 
 =head1 HOMEPAGE
 

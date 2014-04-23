@@ -4,7 +4,7 @@ use warnings;
 
 # this test was generated with Dist::Zilla::Plugin::Test::Compile 2.039
 
-use Test::More  tests => 6 + ($ENV{AUTHOR_TESTING} ? 1 : 0);
+use Test::More  tests => 7 + ($ENV{AUTHOR_TESTING} ? 1 : 0);
 
 
 
@@ -17,7 +17,8 @@ my @module_files = (
 
 my @scripts = (
     'bin/ansitable-list-border-styles',
-    'bin/ansitable-list-color-themes'
+    'bin/ansitable-list-color-themes',
+    'bin/ansitable-list-style-sets'
 );
 
 # no fake home requested

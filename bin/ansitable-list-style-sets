@@ -12,34 +12,22 @@ binmode(STDOUT, ":utf8");
 
 my $t = Text::ANSITable->new;
 
-if ($ARGV[0]) {
-    $t->border_style($ARGV[0]);
+my $all_sets = $t->list_style_sets(1);
+
+$t->columns(['Name', 'Summary', 'Arguments']);
+for (sort keys %$all_sets) {
+    my $set = $all_sets->{$_};
+    $t->add_row([
+        $set->{name},
+        $set->{summary},
+        join(", ", @{ $set->{args} // []}),
+    ]);
 }
 
-my $all_bs = $t->list_border_styles(1);
-
-$t->columns(['Name', 'Summary', 'box_chars?', 'utf8?']);
-my $utf8; # we sort by not utf8 and then utf8, just to demonstrate add_row_separator
-for my $name (sort {($all_bs->{$a}{utf8} ? 1:0)<=>($all_bs->{$b}{utf8} ? 1:0) || $a cmp $b} keys %$all_bs) {
-    my $bs = $all_bs->{$name};
-    my $selected = $name eq $t->border_style->{name};
-    $t->add_row(
-        [$name . ($selected ? " (*)" : ""), $bs->{summary}, $bs->{box_chars} ? 1:0, $bs->{utf8} ? 1:0],
-        {fgcolor=>$selected && $t->use_color ? "aaaa00" : undef});
-
-    if (!$utf8 && $bs->{utf8}) {
-        $t->add_row_separator;
-        $utf8++;
-    }
-}
-
-say "Tip: you can run me with border style name as argument to try it out.";
 print $t->draw;
 
-#use Data::Dump; dd $t->{_row_separators}; dd $t->{_draw}{frow_separators};
-
-#ABSTRACT: List available border styles for Text::ANSITable
-#PODNAME: ansitable-list-border-styles
+#ABSTRACT: List available style sets for Text::ANSITable
+#PODNAME: ansitable-list-style-sets
 
 __END__
 
@@ -49,7 +37,7 @@ __END__
 
 =head1 NAME
 
-ansitable-list-border-styles - List available border styles for Text::ANSITable
+ansitable-list-style-sets - List available style sets for Text::ANSITable
 
 =head1 VERSION
 

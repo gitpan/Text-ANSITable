@@ -8,6 +8,7 @@ Makefile.PL
 README
 bin/ansitable-list-border-styles
 bin/ansitable-list-color-themes
+bin/ansitable-list-style-sets
 dist.ini
 lib/Text/ANSITable.pm
 lib/Text/ANSITable/BorderStyle/Default.pm

@@ -19,6 +19,7 @@ my %WriteMakefileArgs = (
   "DISTNAME" => "Text-ANSITable",
   "EXE_FILES" => [
     "bin/ansitable-list-color-themes",
+    "bin/ansitable-list-style-sets",
     "bin/ansitable-list-border-styles"
   ],
   "LICENSE" => "perl",
@@ -30,13 +31,16 @@ my %WriteMakefileArgs = (
     "Function::Fallback::CoreOrPP" => 0,
     "JSON" => 0,
     "Log::Any" => 0,
+    "Module::List" => 0,
     "Moo" => 0,
     "Parse::VarName" => 0,
     "SHARYANTO::Color::Util" => 0,
+    "SHARYANTO::Package::Util" => 0,
     "SHARYANTO::Role::BorderStyle" => "0.58",
     "SHARYANTO::Role::ColorTheme" => "0.58",
     "Text::ANSI::Util" => "0.08",
-    "experimental" => 0
+    "experimental" => 0,
+    "namespace::clean" => 0
   },
   "TEST_REQUIRES" => {
     "File::Spec" => 0,
@@ -45,7 +49,7 @@ my %WriteMakefileArgs = (
     "Test::Exception" => 0,
     "Test::More" => "0.98"
   },
-  "VERSION" => "0.29",
+  "VERSION" => "0.30",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -62,15 +66,18 @@ my %FallbackPrereqs = (
   "IPC::Open3" => 0,
   "JSON" => 0,
   "Log::Any" => 0,
+  "Module::List" => 0,
   "Moo" => 0,
   "Parse::VarName" => 0,
   "SHARYANTO::Color::Util" => 0,
+  "SHARYANTO::Package::Util" => 0,
   "SHARYANTO::Role::BorderStyle" => "0.58",
   "SHARYANTO::Role::ColorTheme" => "0.58",
   "Test::Exception" => 0,
   "Test::More" => "0.98",
   "Text::ANSI::Util" => "0.08",
-  "experimental" => 0
+  "experimental" => 0,
+  "namespace::clean" => 0
 );
 
 

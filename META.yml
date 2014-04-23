@@ -24,19 +24,22 @@ requires:
   Function::Fallback::CoreOrPP: '0'
   JSON: '0'
   Log::Any: '0'
+  Module::List: '0'
   Moo: '0'
   Parse::VarName: '0'
   SHARYANTO::Color::Util: '0'
+  SHARYANTO::Package::Util: '0'
   SHARYANTO::Role::BorderStyle: '0.58'
   SHARYANTO::Role::ColorTheme: '0.58'
   Text::ANSI::Util: '0.08'
   experimental: '0'
+  namespace::clean: '0'
   perl: '5.010001'
 resources:
   bugtracker: https://rt.cpan.org/Public/Dist/Display.html?Name=Text-ANSITable
   homepage: https://metacpan.org/release/Text-ANSITable
   repository: git://github.com/sharyanto/perl-Text-ANSITable.git
-version: '0.29'
+version: '0.30'
 x_Dist_Zilla:
   perl:
     version: '5.018001'

@@ -10,7 +10,7 @@ use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
 
-our $VERSION = '0.29'; # VERSION
+our $VERSION = '0.30'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -623,6 +623,42 @@ sub apply_style_set {
     my %args = ref($_[0]) eq 'HASH' ? %{$_[0]} : @_;
     my $obj = "Text::ANSITable::StyleSet::$name"->new(%args);
     $obj->apply($self);
+}
+
+sub list_style_sets {
+    require Module::List;
+    require Module::Load;
+    require SHARYANTO::Package::Util;
+
+    my ($self, $detail) = @_;
+
+    my $prefix = (ref($self) ? ref($self) : $self ) .
+        '::StyleSet'; # XXX allow override
+    my $all_sets = $self->{_all_style_sets};
+
+    if (!$all_sets) {
+        my $mods = Module::List::list_modules("$prefix\::",
+                                              {list_modules=>1});
+        $all_sets = {};
+        for my $mod (sort keys %$mods) {
+            #$log->tracef("Loading style set module '%s' ...", $mod);
+            Module::Load::load($mod);
+            my $name = $mod; $name =~ s/\A\Q$prefix\:://;
+            my $summary = $mod->summary;
+            # we don't have meta, so dig it ourselves
+            my %ct = SHARYANTO::Package::Util::list_package_contents($mod);
+            my $args = [sort grep {!/\W/ && !/\A(new|summary|apply)\z/}
+                            keys %ct];
+            $all_sets->{$name} = {name=>$name, summary=>$summary, args=>$args};
+        }
+        $self->{_all_style_sets} = $all_sets;
+    }
+
+    if ($detail) {
+        return $all_sets;
+    } else {
+        return sort keys %$all_sets;
+    }
 }
 
 # read environment variables for style, this will only be done once per object
@@ -1597,7 +1633,7 @@ Text::ANSITable - Create nice formatted tables using extended ASCII and ANSI col
 
 =head1 VERSION
 
-version 0.29
+version 0.30
 
 =head1 SYNOPSIS
 
@@ -2269,6 +2305,11 @@ C<Text::ANSITable::BorderStyle::*> modules.
 
 Return the names of available color themes. Color themes will be searched in
 C<Text::ANSITable::ColorTheme::*> modules.
+
+=head2 $t->list_style_sets => LIST
+
+Return the names of available style sets. Style set names are retrieved by
+listing modules under C<Text::ANSITable::StyleSet::*> namespace.
 
 =head2 $t->get_border_style($name) => HASH
 
