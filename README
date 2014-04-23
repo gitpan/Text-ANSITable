@@ -3,7 +3,10 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.30
+    version 0.31
+
+RELEASE DATE
+    2014-04-23
 
 SYNOPSIS
      use 5.010;
@@ -315,7 +318,7 @@ CELL (HORIZONTAL AND VERTICAL) ALIGNMENT
          $t->set_cell_style($rownum, $colname, valign => 'top');
 
 CELL FORMATS
-    The per-column and per-cell "formats" styles regulate how to format
+    The per-column- and per-cell- "formats" style regulates how to format
     data. The value for this style setting will be passed to
     Data::Unixish::Apply's "apply()", as the "functions" argument. So it
     should be a single string (like "date") or an array (like "['date',
@@ -360,7 +363,8 @@ CONDITIONAL STYLES
     set locally to the column index.
 
     Available keys in %args for conditional row styles: "row" (int, row
-    index). Additionally, $_ will be set locally to the row index.
+    index), "row_data" (array). Additionally, $_ will be set locally to the
+    row index.
 
     Available keys in %args for conditional cell styles: "content" (str),
     "col" (int, column index), "row" (int, row index). Additionally, $_ will
@@ -728,6 +732,9 @@ ENVIRONMENT
      % ANSITABLE_STYLE='{"show_row_separator":1}' ansitable-list-border-styles
 
     will display table with row separator lines after every row.
+
+  WRAP => BOOL
+    Can be used to set default value for the "wrap" column style.
 
   ANSITABLE_COLUMN_STYLES => JSON
     Can be used to set per-column styles. Interpreted right before draw().

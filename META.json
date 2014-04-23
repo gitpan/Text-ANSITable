@@ -40,8 +40,8 @@
             "Parse::VarName" : "0",
             "SHARYANTO::Color::Util" : "0",
             "SHARYANTO::Package::Util" : "0",
-            "SHARYANTO::Role::BorderStyle" : "0.58",
-            "SHARYANTO::Role::ColorTheme" : "0.58",
+            "SHARYANTO::Role::BorderStyle" : "0.72",
+            "SHARYANTO::Role::ColorTheme" : "0.72",
             "Text::ANSI::Util" : "0.08",
             "experimental" : "0",
             "namespace::clean" : "0",
@@ -70,7 +70,7 @@
          "web" : "https://github.com/sharyanto/perl-Text-ANSITable"
       }
    },
-   "version" : "0.30",
+   "version" : "0.31",
    "x_Dist_Zilla" : {
       "perl" : {
          "version" : "5.018001"
@@ -209,6 +209,11 @@
                         "class" : "Pod::Weaver::Section::Version",
                         "name" : "@Author::SHARYANTO/Version",
                         "version" : "4.006"
+                     },
+                     {
+                        "class" : "Pod::Weaver::Section::ReleaseDate",
+                        "name" : "@Author::SHARYANTO/ReleaseDate",
+                        "version" : "0.01"
                      },
                      {
                         "class" : "Pod::Weaver::Section::Region",

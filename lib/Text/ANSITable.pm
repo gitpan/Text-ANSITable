@@ -10,7 +10,7 @@ use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
 
-our $VERSION = '0.30'; # VERSION
+our $VERSION = '0.31'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -480,6 +480,7 @@ sub get_eff_row_style {
         return $self->{_draw}{eff_row_styles}[$row]{$style};
     }
 
+    my $rows = $self->{rows};
     my %styles;
 
     # apply conditional styles
@@ -489,7 +490,8 @@ sub get_eff_row_style {
         local $_ = $row;
         my $res = $e->[0]->(
             $self,
-            row     => $row,
+            row      => $row,
+            row_data => $rows->[$row],
         );
         next COND unless $res;
         if (ref($res) eq 'HASH') {
@@ -588,9 +590,10 @@ sub get_eff_cell_style {
         local $_ = $rows->[$row][$col];
         my $res = $e->[0]->(
             $self,
-            content => $_,
-            col     => $col,
-            row     => $row,
+            content  => $_,
+            col      => $col,
+            row      => $row,
+            row_data => $rows->[$row],
         );
         next COND unless $res;
         if (ref($res) eq 'HASH') {
@@ -638,7 +641,7 @@ sub list_style_sets {
 
     if (!$all_sets) {
         my $mods = Module::List::list_modules("$prefix\::",
-                                              {list_modules=>1});
+                                              {list_modules=>1, recurse=>1});
         $all_sets = {};
         for my $mod (sort keys %$mods) {
             #$log->tracef("Loading style set module '%s' ...", $mod);
@@ -909,7 +912,7 @@ sub _detect_column_types {
             }
         } else {
             $res->{fgcolor} = $ct->{colors}{str_data};
-            $res->{wrap}    = 1;
+            $res->{wrap}    = $ENV{WRAP} // 1;
         }
     }
 
@@ -1633,7 +1636,11 @@ Text::ANSITable - Create nice formatted tables using extended ASCII and ANSI col
 
 =head1 VERSION
 
-version 0.30
+version 0.31
+
+=head1 RELEASE DATE
+
+2014-04-23
 
 =head1 SYNOPSIS
 
@@ -1995,7 +2002,7 @@ Example:
 
 =head1 CELL FORMATS
 
-The per-column and per-cell C<formats> styles regulate how to format data. The
+The per-column- and per-cell- C<formats> style regulates how to format data. The
 value for this style setting will be passed to L<Data::Unixish::Apply>'s
 C<apply()>, as the C<functions> argument. So it should be a single string (like
 C<date>) or an array (like C<< ['date', ['centerpad', {width=>20}]] >>).
@@ -2039,8 +2046,8 @@ Available keys in C<%args> for conditional column styles: C<col> (int, column
 index), C<colname> (str, column name). Additionally, C<$_> will be set locally
 to the column index.
 
-Available keys in C<%args> for conditional row styles: C<row> (int, row index).
-Additionally, C<$_> will be set locally to the row index.
+Available keys in C<%args> for conditional row styles: C<row> (int, row index),
+C<row_data> (array). Additionally, C<$_> will be set locally to the row index.
 
 Available keys in C<%args> for conditional cell styles: C<content> (str), C<col>
 (int, column index), C<row> (int, row index). Additionally, C<$_> will be set
@@ -2475,6 +2482,10 @@ of C<< attr => val >> pairs. Example:
  % ANSITABLE_STYLE='{"show_row_separator":1}' ansitable-list-border-styles
 
 will display table with row separator lines after every row.
+
+=head2 WRAP => BOOL
+
+Can be used to set default value for the C<wrap> column style.
 
 =head2 ANSITABLE_COLUMN_STYLES => JSON
 

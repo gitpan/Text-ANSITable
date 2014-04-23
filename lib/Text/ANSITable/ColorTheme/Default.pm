@@ -7,7 +7,7 @@ use warnings;
 use Function::Fallback::CoreOrPP qw(clone);
 use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
 
-our $VERSION = '0.30'; # VERSION
+our $VERSION = '0.31'; # VERSION
 
 our %color_themes = (
 
@@ -122,7 +122,11 @@ Text::ANSITable::ColorTheme::Default - Default color themes
 
 =head1 VERSION
 
-version 0.30
+version 0.31
+
+=head1 RELEASE DATE
+
+2014-04-23
 
 =head1 HOMEPAGE
 
