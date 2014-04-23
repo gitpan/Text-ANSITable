@@ -6,7 +6,7 @@ use warnings;
 
 use Text::ANSITable;
 
-our $VERSION = '0.28'; # VERSION
+our $VERSION = '0.29'; # VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -57,7 +57,7 @@ ansitable-list-color-themes - List available color themes for Text::ANSITable
 
 =head1 VERSION
 
-version 0.28
+version 0.29
 
 =head1 HOMEPAGE
 

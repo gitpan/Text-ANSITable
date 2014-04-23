@@ -7,19 +7,20 @@ use experimental 'smartmatch';
 
 #use List::Util qw(first);
 use Scalar::Util 'looks_like_number';
+use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
+                        ta_mbwrap);
 
-our $VERSION = '0.28'; # VERSION
+our $VERSION = '0.29'; # VERSION
 
 my $ATTRS = [qw(
 
-                  use_color color_depth use_box_chars use_utf8 handle_widechar
-                  handle_multiline handle_color columns rows column_filter
-                  row_filter show_row_separator show_header show_header
-                  cell_width cell_height cell_pad cell_lpad cell_rpad cell_vpad
-                  cell_tpad cell_bpad cell_fgcolor cell_bgcolor cell_align
-                  cell_valign header_align header_valign header_vpad header_tpad
-                  header_bpad header_fgcolor header_bgcolor color_theme_args
-                  border_style_args
+                  use_color color_depth use_box_chars use_utf8 columns rows
+                  column_filter row_filter show_row_separator show_header
+                  show_header cell_width cell_height cell_pad cell_lpad
+                  cell_rpad cell_vpad cell_tpad cell_bpad cell_fgcolor
+                  cell_bgcolor cell_align cell_valign header_align header_valign
+                  header_vpad header_tpad header_bpad header_fgcolor
+                  header_bgcolor color_theme_args border_style_args
 
           )];
 my $STYLES = $ATTRS;
@@ -40,15 +41,6 @@ my $CELL_STYLES = [qw(
 
                 )];
 
-has handle_color => (
-    is      => 'rw',
-);
-has handle_multiline => (
-    is      => 'rw',
-);
-has handle_widechar => (
-    is      => 'rw',
-);
 has columns => (
     is      => 'rw',
     default => sub { [] },
@@ -88,6 +80,22 @@ has _row_styles => ( # store per-row styles
     default => sub { [] },
 );
 has _cell_styles => ( # store per-cell styles
+    is      => 'rw',
+    default => sub { [] },
+);
+
+# each element of _cond_*styles is a two-element [$cond, ], where $cond is code
+# (str|coderef) and the second element is a hashref containing styles.
+
+has _cond_column_styles => ( # store conditional column styles
+    is      => 'rw',
+    default => sub { [] },
+);
+has _cond_row_styles => ( # store conditional row styles
+    is      => 'rw',
+    default => sub { [] },
+);
+has _cond_cell_styles => ( # store conditional cell styles
     is      => 'rw',
     default => sub { [] },
 );
@@ -159,7 +167,20 @@ with 'SHARYANTO::Role::BorderStyle';
 sub BUILD {
     my ($self, $args) = @_;
 
-    # read ANSITABLE_STYLE env
+    if ($ENV{ANSITABLE_STYLE_SETS}) {
+        require JSON;
+        my $sets = JSON::decode_json($ENV{ANSITABLE_STYLE_SETS});
+        die "ANSITABLE_STYLE_SETS must be an array"
+            unless ref($sets) eq 'ARRAY';
+        for my $set (@$sets) {
+            if (ref($set) eq 'ARRAY') {
+                $self->apply_style_set($set->[0], $set->[1]);
+            } else {
+                $self->apply_style_set($set);
+            }
+        }
+    }
+
     if ($ENV{ANSITABLE_STYLE}) {
         require JSON;
         my $s = JSON::decode_json($ENV{ANSITABLE_STYLE});
@@ -316,6 +337,84 @@ sub set_column_style {
     }
 }
 
+sub get_cond_column_styles {
+    my $self = shift;
+    $self->{_cond_column_styles};
+}
+
+#sub set_cond_column_style {
+#    my ($self, $styles) = @_;
+#    $self->{_cond_column_styles} = $styles;
+#}
+
+sub add_cond_column_style {
+    my $self = shift;
+    my $cond = shift;
+    if (ref($cond) ne 'CODE') {
+        die "cond must be a coderef";
+    }
+
+    my $styles;
+    if (ref($_[0]) eq 'HASH') {
+        $styles = shift;
+    } else {
+        $styles = { @_ };
+    }
+
+    for my $style (keys %$styles) {
+        die "Unknown per-column style '$style', please use one of [".
+            join(", ", @$COLUMN_STYLES) . "]" unless $style ~~ $COLUMN_STYLES;
+    }
+
+    push @{ $self->{_cond_column_styles} }, [$cond, $styles];
+}
+
+#sub clear_cond_column_styles {
+#    my $self = shift;
+#    $self->{_cond_column_styles} = [];
+#}
+
+sub get_eff_column_style {
+    my ($self, $col, $style) = @_;
+
+    $col = $self->_colnum($col);
+
+    # the result of calculation is cached here
+    if (defined $self->{_draw}{eff_column_styles}[$col]) {
+        return $self->{_draw}{eff_column_styles}[$col]{$style};
+    }
+
+    my $cols = $self->{columns};
+    my %styles;
+
+    # apply conditional styles
+  COND:
+    for my $ei (0..@{ $self->{_cond_column_styles} }-1) {
+        my $e = $self->{_cond_column_styles}[$ei];
+        local $_ = $col;
+        my $res = $e->[0]->(
+            $self,
+            col     => $col,
+            colname => $cols->[$col],
+        );
+        next COND unless $res;
+        if (ref($res) eq 'HASH') {
+            $styles{$_} = $res->{$_} for keys %$res;
+        }
+        $styles{$_} = $e->[1]{$_} for keys %{ $e->[1] };
+    }
+
+    # apply per-column styles
+    my $rss = $self->{_column_styles}[$col];
+    if ($rss) {
+        $styles{$_} = $rss->{$_} for keys %$rss;
+    }
+
+    $self->{_draw}{eff_column_styles}[$col] = \%styles;
+
+    $styles{$style};
+}
+
 sub get_row_style {
     my ($self, $row, $style) = @_;
 
@@ -334,6 +433,80 @@ sub set_row_style {
             join(", ", @$ROW_STYLES) . "]" unless $style ~~ $ROW_STYLES;
         $self->{_row_styles}[$row]{$style} = $val;
     }
+}
+
+sub get_cond_row_styles {
+    my $self = shift;
+    $self->{_cond_row_styles};
+}
+
+#sub set_cond_row_style {
+#    my ($self, $styles) = @_;
+#    $self->{_cond_row_styles} = $styles;
+#}
+
+sub add_cond_row_style {
+    my $self = shift;
+    my $cond = shift;
+    if (ref($cond) ne 'CODE') {
+        die "cond must be a coderef";
+    }
+
+    my $styles;
+    if (ref($_[0]) eq 'HASH') {
+        $styles = shift;
+    } else {
+        $styles = { @_ };
+    }
+
+    for my $style (keys %$styles) {
+        die "Unknown per-row style '$style', please use one of [".
+            join(", ", @$ROW_STYLES) . "]" unless $style ~~ $ROW_STYLES;
+    }
+
+    push @{ $self->{_cond_row_styles} }, [$cond, $styles];
+}
+
+#sub clear_cond_row_styles {
+#    my $self = shift;
+#    $self->{_cond_row_styles} = [];
+#}
+
+sub get_eff_row_style {
+    my ($self, $row, $style) = @_;
+
+    # the result of calculation is cached here
+    if (defined $self->{_draw}{eff_row_styles}[$row]) {
+        return $self->{_draw}{eff_row_styles}[$row]{$style};
+    }
+
+    my %styles;
+
+    # apply conditional styles
+  COND:
+    for my $ei (0..@{ $self->{_cond_row_styles} }-1) {
+        my $e = $self->{_cond_row_styles}[$ei];
+        local $_ = $row;
+        my $res = $e->[0]->(
+            $self,
+            row     => $row,
+        );
+        next COND unless $res;
+        if (ref($res) eq 'HASH') {
+            $styles{$_} = $res->{$_} for keys %$res;
+        }
+        $styles{$_} = $e->[1]{$_} for keys %{ $e->[1] };
+    }
+
+    # apply per-row styles
+    my $rss = $self->{_row_styles}[$row];
+    if ($rss) {
+        $styles{$_} = $rss->{$_} for keys %$rss;
+    }
+
+    $self->{_draw}{eff_row_styles}[$row] = \%styles;
+
+    $styles{$style};
 }
 
 sub get_cell_style {
@@ -360,6 +533,271 @@ sub set_cell_style {
     }
 }
 
+sub get_cond_cell_styles {
+    my $self = shift;
+    $self->{_cond_cell_styles};
+}
+
+#sub set_cond_cell_style {
+#    my ($self, $styles) = @_;
+#    $self->{_cond_cell_styles} = $styles;
+#}
+
+sub add_cond_cell_style {
+    my $self = shift;
+    my $cond = shift;
+    if (ref($cond) ne 'CODE') {
+        die "cond must be a coderef";
+    }
+
+    my $styles;
+    if (ref($_[0]) eq 'HASH') {
+        $styles = shift;
+    } else {
+        $styles = { @_ };
+    }
+
+    for my $style (keys %$styles) {
+        die "Unknown per-cell style '$style', please use one of [".
+            join(", ", @$CELL_STYLES) . "]" unless $style ~~ $CELL_STYLES;
+    }
+
+    push @{ $self->{_cond_cell_styles} }, [$cond, $styles];
+}
+
+#sub clear_cond_cell_styles {
+#    my $self = shift;
+#    $self->{_cond_cell_styles} = [];
+#}
+
+sub get_eff_cell_style {
+    my ($self, $row, $col, $style) = @_;
+
+    # the result of calculation is cached here
+    if (defined $self->{_draw}{eff_cell_styles}[$row][$col]) {
+        return $self->{_draw}{eff_cell_styles}[$row][$col]{$style};
+    }
+
+    my $rows = $self->{rows};
+    my %styles;
+
+    # apply conditional styles
+  COND:
+    for my $ei (0..@{ $self->{_cond_cell_styles} }-1) {
+        my $e = $self->{_cond_cell_styles}[$ei];
+        local $_ = $rows->[$row][$col];
+        my $res = $e->[0]->(
+            $self,
+            content => $_,
+            col     => $col,
+            row     => $row,
+        );
+        next COND unless $res;
+        if (ref($res) eq 'HASH') {
+            $styles{$_} = $res->{$_} for keys %$res;
+        }
+        $styles{$_} = $e->[1]{$_} for keys %{ $e->[1] };
+    }
+
+    # apply per-cell styles
+    my $css = $self->{_cell_styles}[$row][$col];
+    if ($css) {
+        $styles{$_} = $css->{$_} for keys %$css;
+    }
+
+    $self->{_draw}{eff_cell_styles}[$row][$col] = \%styles;
+
+    $styles{$style};
+}
+
+sub apply_style_set {
+    my $self = shift;
+    my $name = shift;
+    $name =~ /\A[A-Za-z0-9_]+(?:::[A-Za-z0-9_]+)*\z/
+        or die "Invalid style set name, please use alphanums only";
+    {
+        my $name = $name;
+        $name =~ s!::!/!g;
+        require "Text/ANSITable/StyleSet/$name.pm";
+    }
+    my %args = ref($_[0]) eq 'HASH' ? %{$_[0]} : @_;
+    my $obj = "Text::ANSITable::StyleSet::$name"->new(%args);
+    $obj->apply($self);
+}
+
+# read environment variables for style, this will only be done once per object
+sub _read_style_envs {
+    my $self = shift;
+
+    next if $self->{_read_style_envs}++;
+
+    if ($ENV{ANSITABLE_COLUMN_STYLES}) {
+        require JSON;
+        my $ss = JSON::decode_json($ENV{ANSITABLE_COLUMN_STYLES});
+        die "ANSITABLE_COLUMN_STYLES must be a hash"
+            unless ref($ss) eq 'HASH';
+        for my $col (keys %$ss) {
+            my $ci = $self->_colnum($col);
+            my $s = $ss->{$col};
+            for my $k (keys %$s) {
+                my $v = $s->{$k};
+            die "Unknown column style '$k' (for column $col) in ".
+                "ANSITABLE_COLUMN_STYLES environment, ".
+                    "please use one of [".join(", ", @$COLUMN_STYLES)."]"
+                        unless $k ~~ $COLUMN_STYLES;
+                $self->{_column_styles}[$ci]{$k} //= $v;
+            }
+        }
+    }
+
+    if ($ENV{ANSITABLE_ROW_STYLES}) {
+        require JSON;
+        my $ss = JSON::decode_json($ENV{ANSITABLE_ROW_STYLES});
+        die "ANSITABLE_ROW_STYLES must be a hash"
+            unless ref($ss) eq 'HASH';
+        for my $row (keys %$ss) {
+            my $s = $ss->{$row};
+            for my $k (keys %$s) {
+                my $v = $s->{$k};
+            die "Unknown row style '$k' (for row $row) in ".
+                "ANSITABLE_ROW_STYLES environment, ".
+                    "please use one of [".join(", ", @$ROW_STYLES)."]"
+                        unless $k ~~ $ROW_STYLES;
+                $self->{_row_styles}[$row]{$k} //= $v;
+            }
+        }
+    }
+
+    if ($ENV{ANSITABLE_CELL_STYLES}) {
+        require JSON;
+        my $ss = JSON::decode_json($ENV{ANSITABLE_CELL_STYLES});
+        die "ANSITABLE_CELL_STYLES must be a hash"
+            unless ref($ss) eq 'HASH';
+        for my $cell (keys %$ss) {
+            die "Invalid cell specification in ANSITABLE_CELL_STYLES: ".
+                "$cell, please use 'row,col'"
+                    unless $cell =~ /^(.+),(.+)$/;
+            my $row = $1;
+            my $col = $2;
+            my $ci = $self->_colnum($col);
+            my $s = $ss->{$cell};
+            for my $k (keys %$s) {
+                my $v = $s->{$k};
+            die "Unknown cell style '$k' (for cell $row,$col) in ".
+                "ANSITABLE_CELL_STYLES environment, ".
+                    "please use one of [".join(", ", @$CELL_STYLES)."]"
+                        unless $k ~~ $CELL_STYLES;
+                $self->{_cell_styles}[$row][$ci]{$k} //= $v;
+            }
+        }
+    }
+}
+
+# determine which columns to show (due to column_filter)
+sub _calc_fcols {
+    my $self = shift;
+
+    my $cols = $self->{columns};
+    my $cf   = $self->{column_filter};
+
+    my $fcols;
+    if (ref($cf) eq 'CODE') {
+        $fcols = [grep {$cf->($_)} @$cols];
+    } elsif (ref($cf) eq 'ARRAY') {
+        $fcols = [grep {defined} map {looks_like_number($_) ?
+                                          $cols->[$_] : $_} @$cf];
+    } else {
+        $fcols = $cols;
+    }
+    $self->{_draw}{fcols} = $fcols;
+}
+
+# calculate widths/heights of header, store width settings, column [lr]pads
+sub _calc_header_height {
+    my $self = shift;
+
+    my $cols  = $self->{columns};
+    my $fcols = $self->{_draw}{fcols};
+
+    my $fcol_widths = []; # index = [colnum]
+    my $header_height = 1;
+    my $fcol_lpads  = []; # index = [colnum]
+    my $fcol_rpads  = []; # ditto
+    my $fcol_setwidths  = []; # index = [colnum], from cell_width/col width
+    my $frow_setheights = []; # index = [frownum], from cell_height/row height
+
+    my %seen;
+    my $lpad = $self->{cell_lpad} // $self->{cell_pad}; # tbl-lvl leftp
+    my $rpad = $self->{cell_rpad} // $self->{cell_pad}; # tbl-lvl rightp
+    for my $i (0..@$cols-1) {
+        next unless $cols->[$i] ~~ $fcols;
+        next if $seen{$cols->[$i]}++;
+
+        $fcol_setwidths->[$i] = $self->get_eff_column_style($i, 'width') //
+            $self->{cell_width};
+        my $wh = $self->_opt_calc_cell_width_height(undef, $i, $cols->[$i]);
+        $fcol_widths->[$i] = $wh->[0];
+        $header_height = $wh->[1]
+            if !defined($header_height) || $header_height < $wh->[1];
+        $fcol_lpads->[$i] = $self->get_eff_column_style($i, 'lpad') //
+            $self->get_eff_column_style($i, 'pad') // $lpad;
+        $fcol_rpads->[$i] = $self->get_eff_column_style($i, 'rpad') //
+            $self->get_eff_column_style($i, 'pad') // $rpad;
+    }
+
+    $self->{_draw}{header_height}   = $header_height;
+    $self->{_draw}{fcol_lpads}      = $fcol_lpads;
+    $self->{_draw}{fcol_rpads}      = $fcol_rpads;
+    $self->{_draw}{fcol_setwidths}  = $fcol_setwidths;
+    $self->{_draw}{frow_setheights} = $frow_setheights;
+    $self->{_draw}{fcol_widths}     = $fcol_widths;
+}
+
+# determine which rows to show, calculate vertical paddings of data rows, store
+# height settings
+sub _calc_frows {
+    my $self = shift;
+
+    my $rows = $self->{rows};
+    my $rf   = $self->{row_filter};
+    my $frow_setheights = $self->{_draw}{frow_setheights};
+
+    my $frow_tpads  = []; # index = [frownum]
+    my $frow_bpads  = []; # ditto
+    my $frows = [];
+    my $frow_separators = [];
+    my $frow_orig_indices = []; # needed when accessing original row data
+
+    my $tpad = $self->{cell_tpad} // $self->{cell_vpad}; # tbl-lvl top pad
+    my $bpad = $self->{cell_bpad} // $self->{cell_vpad}; # tbl-lvl botom pad
+    my $i = -1;
+    my $j = -1;
+    for my $row (@$rows) {
+        $i++;
+        if (ref($rf) eq 'CODE') {
+            next unless $rf->($row, $i);
+        } elsif ($rf) {
+            next unless $i ~~ $rf;
+        }
+        $j++;
+        push @$frow_setheights, $self->get_eff_row_style($i, 'height') //
+            $self->{cell_height};
+        push @$frows, [@$row]; # 1-level clone, for storing formatted values
+        push @$frow_separators, $j if $i ~~ $self->{_row_separators};
+        push @$frow_tpads, $self->get_eff_row_style($i, 'tpad') //
+            $self->get_eff_row_style($i, 'vpad') // $tpad;
+        push @$frow_bpads, $self->get_eff_row_style($i, 'bpad') //
+            $self->get_eff_row_style($i, 'vpad') // $bpad;
+        push @$frow_orig_indices, $i;
+    }
+
+    $self->{_draw}{frows}             = $frows;
+    $self->{_draw}{frow_separators}   = $frow_separators;
+    $self->{_draw}{frow_tpads}        = $frow_tpads;
+    $self->{_draw}{frow_bpads}        = $frow_bpads;
+    $self->{_draw}{frow_orig_indices} = $frow_orig_indices;
+}
+
 # detect column type from data/header name. assign default column align, valign,
 # fgcolor, bgcolor, formats.
 sub _detect_column_types {
@@ -380,7 +818,7 @@ sub _detect_column_types {
         next unless $col ~~ $self->{_draw}{fcols};
 
         # but detect from all rows, not just ones we're showing
-        my $type = $self->get_column_style($col, 'type');
+        my $type = $self->get_eff_column_style($col, 'type');
         my $subtype;
       DETECT:
         {
@@ -440,73 +878,12 @@ sub _detect_column_types {
     }
 
     #use Data::Dump; print "D:fcol_detect: "; dd $fcol_detect;
-    $fcol_detect;
-}
-
-sub _read_style_envs {
-    my $self = shift;
-
-    next if $self->{_draw}{read_style_envs}++;
-
-    if ($ENV{ANSITABLE_COLUMN_STYLES}) {
-        require JSON;
-        my $ss = JSON::decode_json($ENV{ANSITABLE_COLUMN_STYLES});
-        for my $col (keys %$ss) {
-            my $ci = $self->_colnum($col);
-            my $s = $ss->{$col};
-            for my $k (keys %$s) {
-                my $v = $s->{$k};
-            die "Unknown column style '$k' (for column $col) in ".
-                "ANSITABLE_COLUMN_STYLES environment, ".
-                    "please use one of [".join(", ", @$COLUMN_STYLES)."]"
-                        unless $k ~~ $COLUMN_STYLES;
-                $self->{_column_styles}[$ci]{$k} //= $v;
-            }
-        }
-    }
-
-    if ($ENV{ANSITABLE_ROW_STYLES}) {
-        require JSON;
-        my $ss = JSON::decode_json($ENV{ANSITABLE_ROW_STYLES});
-        for my $row (keys %$ss) {
-            my $s = $ss->{$row};
-            for my $k (keys %$s) {
-                my $v = $s->{$k};
-            die "Unknown row style '$k' (for row $row) in ".
-                "ANSITABLE_ROW_STYLES environment, ".
-                    "please use one of [".join(", ", @$ROW_STYLES)."]"
-                        unless $k ~~ $ROW_STYLES;
-                $self->{_row_styles}[$row]{$k} //= $v;
-            }
-        }
-    }
-
-    if ($ENV{ANSITABLE_CELL_STYLES}) {
-        require JSON;
-        my $ss = JSON::decode_json($ENV{ANSITABLE_CELL_STYLES});
-        for my $cell (keys %$ss) {
-            die "Invalid cell specification in ANSITABLE_CELL_STYLES: ".
-                "$cell, please use 'row,col'"
-                    unless $cell =~ /^(.+),(.+)$/;
-            my $row = $1;
-            my $col = $2;
-            my $ci = $self->_colnum($col);
-            my $s = $ss->{$cell};
-            for my $k (keys %$s) {
-                my $v = $s->{$k};
-            die "Unknown cell style '$k' (for row $row) in ".
-                "ANSITABLE_CELL_STYLES environment, ".
-                    "please use one of [".join(", ", @$CELL_STYLES)."]"
-                        unless $k ~~ $CELL_STYLES;
-                $self->{_cell_styles}[$row][$ci]{$k} //= $v;
-            }
-        }
-    }
+    $self->{_draw}{fcol_detect} = $fcol_detect;
 }
 
 # calculate width and height of a cell, but skip calculating (to save some
 # cycles) if width is already set by frow_setheights / fcol_setwidths.
-sub _opt_calc_width_height {
+sub _opt_calc_cell_width_height {
     my ($self, $frow_num, $col, $text) = @_;
 
     $col = $self->_colnum($col);
@@ -518,7 +895,7 @@ sub _opt_calc_width_height {
 
     my $wh;
     if ($calcw) {
-        $wh = $self->{_func_width_height}->($text);
+        $wh = ta_mbswidth_height($text);
         $wh->[0] = -$setw if defined($setw) && $setw<0 && $wh->[0] < -$setw;
         $wh->[1] = $seth if !$calch;
         $wh->[1] = -$seth if defined($seth) && $seth<0 && $wh->[1] < -$seth;
@@ -529,11 +906,13 @@ sub _opt_calc_width_height {
     } else {
         $wh = [$setw, $seth];
     }
-    #say "D:_opt_calc_width_height(", $frow_num//"undef", ", $col) = $wh->[0], $wh->[1]";
+    #say "D:_opt_calc_cell_width_height(", $frow_num//"undef", ", $col) = $wh->[0], $wh->[1]";
     $wh;
 }
 
 sub _apply_column_formats {
+    require Data::Unixish::Apply;
+
     my $self = shift;
 
     my $cols  = $self->{columns};
@@ -545,10 +924,9 @@ sub _apply_column_formats {
     for my $i (0..@$cols-1) {
         next unless $cols->[$i] ~~ $fcols;
         next if $seen{$cols->[$i]}++;
-        my @fmts = @{ $self->get_column_style($i, 'formats') //
+        my @fmts = @{ $self->get_eff_column_style($i, 'formats') //
                           $fcol_detect->[$i]{formats} // [] };
         if (@fmts) {
-            require Data::Unixish::Apply;
             my $res = Data::Unixish::Apply::apply(
                 in => [map {$frows->[$_][$i]} 0..@$frows-1],
                 functions => \@fmts,
@@ -565,6 +943,8 @@ sub _apply_column_formats {
 }
 
 sub _apply_cell_formats {
+    require Data::Unixish::Apply;
+
     my $self = shift;
 
     my $cols  = $self->{columns};
@@ -580,11 +960,10 @@ sub _apply_cell_formats {
             next unless $cols->[$j] ~~ $fcols;
             next if $seen{$cols->[$j]}++;
 
-            my $fmts = $self->get_cell_style($i, $j, 'formats');
+            my $fmts = $self->get_eff_cell_style($origi, $j, 'formats');
             if (defined $fmts) {
-                require Data::Unixish::Apply;
                 my $res = Data::Unixish::Apply::apply(
-                    in => [ $rows->[$origi][$j] ],
+                    in => [ $frows->[$i][$j] ],
                     functions => $fmts,
                 );
                 die "Can't format cell ($origi, $cols->[$j]): ".
@@ -602,28 +981,55 @@ sub _calc_row_widths_heights {
     my $fcols = $self->{_draw}{fcols};
     my $frows = $self->{_draw}{frows};
 
-    my $frow_heights = $self->{_draw}{frow_heights};
+    my $frow_heights = [];
     my $fcol_widths  = $self->{_draw}{fcol_widths};
     my $frow_orig_indices = $self->{_draw}{frow_orig_indices};
 
     my $height = $self->{cell_height};
     my $tpad = $self->{cell_tpad} // $self->{cell_vpad}; # tbl-lvl tpad
     my $bpad = $self->{cell_bpad} // $self->{cell_vpad}; # tbl-lvl bpad
-    my $cswidths = [map {$self->get_column_style($_, 'width')} 0..@$cols-1];
+    my $cswidths = [map {$self->get_eff_column_style($_, 'width')} 0..@$cols-1];
     for my $i (0..@$frows-1) {
         my %seen;
         my $origi = $frow_orig_indices->[$i];
-        my $rsheight = $self->get_row_style($origi, 'height');
+        my $rsheight = $self->get_eff_row_style($origi, 'height');
         for my $j (0..@$cols-1) {
             next unless $cols->[$j] ~~ $fcols;
             next if $seen{$cols->[$j]}++;
 
-            my $wh = $self->_opt_calc_width_height($i,$j, $frows->[$i][$j]);
+            my $wh = $self->_opt_calc_cell_width_height($i,$j,$frows->[$i][$j]);
 
             $fcol_widths->[$j]  = $wh->[0] if $fcol_widths->[$j] < $wh->[0];
             $frow_heights->[$i] = $wh->[1] if !defined($frow_heights->[$i])
                 || $frow_heights->[$i] < $wh->[1];
         } # col
+    }
+    $self->{_draw}{frow_heights}  = $frow_heights;
+}
+
+sub _wrap_wrappable_columns {
+    my $self = shift;
+
+    my $cols  = $self->{columns};
+    my $fcols = $self->{_draw}{fcols};
+    my $frows = $self->{_draw}{frows};
+    my $fcol_detect    = $self->{_draw}{fcol_detect};
+    my $fcol_setwidths = $self->{_draw}{fcol_setwidths};
+
+    my %seen;
+    for my $i (0..@$cols-1) {
+        next unless $cols->[$i] ~~ $fcols;
+        next if $seen{$cols->[$i]}++;
+
+        if (($self->get_eff_column_style($i, 'wrap') // $self->{column_wrap} //
+                 $fcol_detect->[$i]{wrap}) &&
+                     defined($fcol_setwidths->[$i]) &&
+                         $fcol_setwidths->[$i]>0) {
+            for (0..@$frows-1) {
+                $frows->[$_][$i] = ta_mbwrap(
+                    $frows->[$_][$i], $fcol_setwidths->[$i]);
+            }
+        }
     }
 }
 
@@ -694,7 +1100,7 @@ sub _adjust_column_widths {
         my $ci = $self->_colnum($fcols->[$i]);
         next if defined($fcol_setwidths->[$ci]) && $fcol_setwidths->[$ci]>0;
         next if $fcol_widths->[$ci] < 30;
-        next unless $self->get_column_style($ci, 'wrap') //
+        next unless $self->get_eff_column_style($ci, 'wrap') //
             $self->{column_wrap} // $fcol_detect->[$ci]{wrap};
         $acols{$ci}++;
         $origw{$ci} = $fcol_widths->[$ci];
@@ -736,7 +1142,7 @@ sub _adjust_column_widths {
     for my $ci (keys %acols) {
         next unless $origw{$ci} != $fcol_widths->[$ci];
         for (0..@$frows-1) {
-            $frows->[$_][$ci] = $self->{_func_wrap}->(
+            $frows->[$_][$ci] = ta_mbwrap(
                 $frows->[$_][$ci], $fcol_setwidths->[$ci]);
         }
     }
@@ -744,91 +1150,7 @@ sub _adjust_column_widths {
     # recalculate column widths
     $self->_calc_row_widths_heights;
     $self->_calc_table_width_height;
-
     1;
-}
-
-sub _pick_str_functions {
-    my $self = shift;
-
-    my $fcols = $self->{_draw}{fcols};
-    my $cols  = $self->{columns};
-    my $rows  = $self->{rows}; # frows not yet available
-
-    # check to see if content has color, so we can optimize by using simpler
-    # function if content does not have some/any of these. XXX note that this is
-    # not really proper atm, because we haven't applied cell formats and formats
-    # might change content.
-    my $ct_wc = 0;
-    my $ct_ml = 0;
-    my $ct_col = 0;
-
-    if ($self->{show_header} && @$fcols) {
-        my %seen;
-        for my $i (0..@$fcols-1) {
-            my $ci = $self->_colnum($fcols->[$i]);
-            next if $seen{$i}++;
-            unless ($ct_wc) {
-                $ct_wc = 1 if $cols->[$i] =~ /[[:^ascii:]]/o;
-            }
-            unless ($ct_ml) {
-                $ct_ml = 1 if $cols->[$i] =~ /\n/o;
-            }
-            unless ($ct_col) {
-                $ct_col = 1 if $cols->[$i] =~ /\e\[/o;
-            }
-        }
-    }
-
-    if (@$fcols) {
-        for my $i (0..@$rows-1) {
-            my %seen;
-            for my $j (0..@$cols-1) {
-                next unless $cols->[$j] ~~ $fcols;
-                next if $seen{$cols->[$j]}++;
-                unless ($ct_wc) {
-                    $ct_wc = 1 if defined($rows->[$i][$j]) &&
-                        $rows->[$i][$j] =~ /[[:^ascii:]]/o;
-                }
-                unless ($ct_ml) {
-                    $ct_ml = 1 if defined($rows->[$i][$j]) &&
-                        $rows->[$i][$j] =~ /\n/o;
-                }
-                unless ($ct_col) {
-                    $ct_col = 1 if defined($rows->[$i][$j]) &&
-                        $rows->[$i][$j] =~ /\e\[/o;
-                }
-            }
-        }
-    }
-
-    my $wc  = ($self->{handle_widechar} // $ct_wc) && $self->{use_utf8};
-    my $ml  = ($self->{handle_multiline} // $ct_ml);
-    my $col = ($self->{handle_color} // $ct_col) && $self->{use_color};
-    #say "D:wc=$wc, ml=$ml, col=$col";
-
-    if ($col && $wc) {
-        require Text::ANSI::Util;
-        $self->{_func_wrap} = \&Text::ANSI::Util::ta_mbwrap;
-        $self->{_func_pad}  = \&Text::ANSI::Util::ta_mbpad;
-        $self->{_func_width_height} = \&Text::ANSI::Util::ta_mbswidth_height;
-    } elsif ($col) {
-        require Text::ANSI::Util;
-        $self->{_func_wrap} = \&Text::ANSI::Util::ta_wrap;
-        $self->{_func_pad}  = \&Text::ANSI::Util::ta_pad;
-        $self->{_func_width_height} = \&Text::ANSI::Util::ta_length_height;
-    } elsif ($wc) {
-        require Text::WideChar::Util;
-        $self->{_func_wrap} = \&Text::WideChar::Util::mbwrap;
-        $self->{_func_pad}  = \&Text::WideChar::Util::mbpad;
-        $self->{_func_width_height} = \&Text::WideChar::Util::mbswidth_height;
-    } else {
-        require SHARYANTO::String::Util;
-        require Text::WideChar::Util;
-        $self->{_func_wrap} = \&Text::WideChar::Util::wrap;
-        $self->{_func_pad}  = \&SHARYANTO::String::Util::pad;
-        $self->{_func_width_height} = \&Text::WideChar::Util::length_height;
-    }
 }
 
 # filter columns & rows, calculate widths/paddings, format data, put the results
@@ -837,190 +1159,18 @@ sub _prepare_draw {
     my $self = shift;
 
     $self->{_draw} = {};
-    $self->{_draw}{y} = 0; # current line
-    $self->{_draw}{buf} = [];
 
     $self->_read_style_envs;
-
-    # ansi codes to set and reset line-drawing mode.
-    {
-        my $bs = $self->{border_style};
-        $self->{_draw}{set_line_draw_mode}   = $bs->{box_chars} ? "\e(0" : "";
-        $self->{_draw}{reset_line_draw_mode} = $bs->{box_chars} ? "\e(B" : "";
-    }
-
-    my $cf    = $self->{column_filter};
-    my $rf    = $self->{row_filter};
-    my $cols  = $self->{columns};
-    my $rows  = $self->{rows};
-
-    # determine which columns to show
-    my $fcols;
-    if (ref($cf) eq 'CODE') {
-        $fcols = [grep {$cf->($_)} @$cols];
-    } elsif (ref($cf) eq 'ARRAY') {
-        $fcols = [grep {defined} map {looks_like_number($_) ?
-                                          $cols->[$_] : $_} @$cf];
-    } else {
-        $fcols = $cols;
-    }
-    $self->{_draw}{fcols} = $fcols;
-    $self->_pick_str_functions;
-
-    my $fcol_setwidths  = []; # index = [colnum], from cell_width/col width
-    my $frow_setheights = []; # index = [frownum], from cell_height/row height
-    $self->{_draw}{fcol_setwidths}  = $fcol_setwidths;
-    $self->{_draw}{frow_setheights} = $frow_setheights;
-
-    # calculate widths/heights of header, store width settings, column [lr]pads
-    my $fcol_widths = []; # index = [colnum]
-    my $header_height = 1;
-    my $fcol_lpads  = []; # index = [colnum]
-    my $fcol_rpads  = []; # ditto
-    {
-        my %seen;
-        my $lpad = $self->{cell_lpad} // $self->{cell_pad}; # tbl-lvl leftp
-        my $rpad = $self->{cell_rpad} // $self->{cell_pad}; # tbl-lvl rightp
-        for my $i (0..@$cols-1) {
-            next unless $cols->[$i] ~~ $fcols;
-            next if $seen{$cols->[$i]}++;
-            $fcol_setwidths->[$i] = $self->get_column_style($i, 'width') //
-                $self->{cell_width};
-            my $wh = $self->_opt_calc_width_height(undef, $i, $cols->[$i]);
-            $fcol_widths->[$i] = $wh->[0];
-            $header_height = $wh->[1]
-                if !defined($header_height) || $header_height < $wh->[1];
-            $fcol_lpads->[$i] = $self->get_column_style($i, 'lpad') //
-                $self->get_column_style($i, 'pad') // $lpad;
-            $fcol_rpads->[$i] = $self->get_column_style($i, 'rpad') //
-                $self->get_column_style($i, 'pad') // $rpad;
-        }
-    }
-    $self->{_draw}{header_height} = $header_height;
-    $self->{_draw}{fcol_lpads}  = $fcol_lpads;
-    $self->{_draw}{fcol_rpads}  = $fcol_rpads;
-
-    # calculate vertical paddings of data rows, store height settings
-    my $frow_tpads  = []; # index = [frownum]
-    my $frow_bpads  = []; # ditto
-    my $frows = [];
-    my $frow_separators = [];
-    my $frow_orig_indices = []; # needed when accessing original row data
-    {
-        my $tpad = $self->{cell_tpad} // $self->{cell_vpad}; # tbl-lvl top pad
-        my $bpad = $self->{cell_bpad} // $self->{cell_vpad}; # tbl-lvl botom pad
-        my $i = -1;
-        my $j = -1;
-        for my $row (@$rows) {
-            $i++;
-            if (ref($rf) eq 'CODE') {
-                next unless $rf->($row, $i);
-            } elsif ($rf) {
-                next unless $i ~~ $rf;
-            }
-            $j++;
-            push @$frow_setheights, $self->get_row_style($i, 'height') //
-                $self->{cell_height};
-            push @$frows, [@$row]; # 1-level clone, for storing formatted values
-            push @$frow_separators, $j if $i ~~ $self->{_row_separators};
-            push @$frow_tpads, $self->get_row_style($i, 'tpad') //
-                $self->get_row_style($i, 'vpad') // $tpad;
-            push @$frow_bpads, $self->get_row_style($i, 'bpad') //
-                $self->get_row_style($i, 'vpad') // $bpad;
-            push @$frow_orig_indices, $i;
-        }
-    }
-    $self->{_draw}{frows}             = $frows;
-    $self->{_draw}{frow_separators}   = $frow_separators;
-    $self->{_draw}{frow_tpads}        = $frow_tpads;
-    $self->{_draw}{frow_bpads}        = $frow_bpads;
-    $self->{_draw}{frow_orig_indices} = $frow_orig_indices;
-
-    # detect column type from data/header name. assign default column align,
-    # valign, fgcolor, bgcolor, formats.
-    my $fcol_detect = $self->_detect_column_types;
-    $self->{_draw}{fcol_detect} = $fcol_detect;
-
-    # apply column formats
+    $self->_calc_fcols;
+    $self->_calc_header_height;
+    $self->_calc_frows;
+    $self->_detect_column_types;
     $self->_apply_column_formats;
-
-    # calculate row widths/heights
-    $self->{_draw}{frow_heights}  = [];
-    $self->{_draw}{fcol_widths}   = $fcol_widths;
-    $self->_calc_row_widths_heights;
-
-    # wrap wrappable columns
-    {
-        my %seen;
-        for my $i (0..@$cols-1) {
-            next unless $cols->[$i] ~~ $fcols;
-            next if $seen{$cols->[$i]}++;
-            if (($self->get_column_style($i, 'wrap') // $self->{column_wrap} //
-                 $fcol_detect->[$i]{wrap}) &&
-                     defined($fcol_setwidths->[$i]) &&
-                         $fcol_setwidths->[$i]>0) {
-                for (0..@$frows-1) {
-                    $frows->[$_][$i] = $self->{_func_wrap}->(
-                        $frows->[$_][$i], $fcol_setwidths->[$i]);
-                }
-            }
-        }
-    }
-
-    # apply cell formats
     $self->_apply_cell_formats;
-
-    # apply cell formats, calculate widths/heights of data rows
-    my $frow_heights  = []; # index = [frownum]
-    {
-        my $height = $self->{cell_height};
-        my $tpad = $self->{cell_tpad} // $self->{cell_vpad}; # tbl-lvl tpad
-        my $bpad = $self->{cell_bpad} // $self->{cell_vpad}; # tbl-lvl bpad
-        my $cswidths = [map {$self->get_column_style($_, 'width')} 0..@$cols-1];
-        for my $i (0..@$frows-1) {
-            my %seen;
-            my $origi = $frow_orig_indices->[$i];
-            my $rsheight = $self->get_row_style($origi, 'height');
-            $frow_heights->[$i] = 1;
-            for my $j (0..@$cols-1) {
-                next unless $cols->[$j] ~~ $fcols;
-                next if $seen{$cols->[$j]}++;
-
-                # apply cell-level formats
-                my $fmts = $self->get_cell_style($i, $j, 'formats');
-                if (defined $fmts) {
-                    require Data::Unixish::Apply;
-                    my $res = Data::Unixish::Apply::apply(
-                        in => [ $rows->[$origi][$j] ],
-                        functions => $fmts,
-                    );
-                    die "Can't format cell ($origi, $cols->[$j]): ".
-                        "$res->[0] - $res->[1]" unless $res->[0] == 200;
-                    $frows->[$i][$j] = $res->[2][0] // "";
-                }
-
-                # calculate heights/widths of data
-                my $wh = $self->_opt_calc_width_height($i,$j, $frows->[$i][$j]);
-
-                $fcol_widths->[$j]  = $wh->[0] if $fcol_widths->[$j] < $wh->[0];
-                $frow_heights->[$i] = $wh->[1] if !defined($frow_heights->[$i])
-                    || $frow_heights->[$i] < $wh->[1];
-            } # each col
-        }
-    }
-    $self->{_draw}{frow_heights}  = $frow_heights;
-    $self->{_draw}{fcol_widths}   = $fcol_widths;
-
-    # calculate table width and height
+    $self->_wrap_wrappable_columns;
+    $self->_calc_row_widths_heights;
     $self->_calc_table_width_height;
-
-    # try to adjust widths if possible (if table is too wide)
     $self->_adjust_column_widths;
-
-    #use Data::Dump; print "D:frow_heights: "; dd $frow_heights;
-    #use Data::Dump; print "D:fcol_widths: "; dd $fcol_widths;
-    #use Data::Dump; print "D:header_height: "; dd $header_height;
-    #use Data::Dump; print "D:table_height: "; dd $self->{_draw}{table_height};
 }
 
 # push string into the drawing buffer. also updates "cursor" position.
@@ -1126,11 +1276,12 @@ sub _get_cell_lines {
         ($align =~ /^[Rr]/o ? "left" : "center");
 
     for (@lines) {
-        $_ = (" "x$lpad) . $self->{_func_pad}->($_, $width, $pad, " ", 1) .
-            (" "x$rpad);
-        # add default color
-        s/\e\[0m(?=.)/\e[0m$color/g if length($color);
-        $_ = $color . $_;
+        $_ = (" "x$lpad) . ta_mbpad($_, $width, $pad, " ", 1) . (" "x$rpad);
+        if ($self->{use_color}) {
+            # add default color
+            s/\e\[0m(?=.)/\e[0m$color/g if length($color);
+            $_ = $color . $_;
+        }
     }
 
     \@lines;
@@ -1213,11 +1364,11 @@ sub _get_data_cell_lines {
 
     my $tmp;
     my $fgcolor;
-    if (defined ($tmp = $self->get_cell_style($oy, $x, 'fgcolor'))) {
+    if (defined ($tmp = $self->get_eff_cell_style($oy, $x, 'fgcolor'))) {
         $fgcolor = $self->themecol2ansi($tmp, $args);
-    } elsif (defined ($tmp = $self->get_row_style($oy, 'fgcolor'))) {
+    } elsif (defined ($tmp = $self->get_eff_row_style($oy, 'fgcolor'))) {
         $fgcolor = $self->themecol2ansi($tmp, $args);
-    } elsif (defined ($tmp = $self->get_column_style($x, 'fgcolor'))) {
+    } elsif (defined ($tmp = $self->get_eff_column_style($x, 'fgcolor'))) {
         $fgcolor = $self->themecol2ansi($tmp, $args);
     } elsif (defined ($tmp = $self->{cell_fgcolor})) {
         $fgcolor = $self->themecol2ansi($tmp, $args);
@@ -1230,11 +1381,11 @@ sub _get_data_cell_lines {
     }
 
     my $bgcolor;
-    if (defined ($tmp = $self->get_cell_style($oy, $x, 'bgcolor'))) {
+    if (defined ($tmp = $self->get_eff_cell_style($oy, $x, 'bgcolor'))) {
         $bgcolor = $self->themecol2ansi($tmp, $args, 1);
-    } elsif (defined ($tmp = $self->get_row_style($oy, 'bgcolor'))) {
+    } elsif (defined ($tmp = $self->get_eff_row_style($oy, 'bgcolor'))) {
         $bgcolor = $self->themecol2ansi($tmp, $args, 1);
-    } elsif (defined ($tmp = $self->get_column_style($x, 'bgcolor'))) {
+    } elsif (defined ($tmp = $self->get_eff_column_style($x, 'bgcolor'))) {
         $bgcolor = $self->themecol2ansi($tmp, $args, 1);
     } elsif (defined ($tmp = $self->{cell_bgcolor})) {
         $bgcolor = $self->themecol2ansi($tmp, $args, 1);
@@ -1247,16 +1398,16 @@ sub _get_data_cell_lines {
     }
 
     my $align =
-        $self->get_cell_style($y, $x, 'align') //
-            $self->get_row_style($y, 'align') //
-                $self->get_column_style($x, 'align') //
+        $self->get_eff_cell_style($oy, $x, 'align') //
+            $self->get_eff_row_style($oy, 'align') //
+                $self->get_eff_column_style($x, 'align') //
                     $self->{cell_align} //
                         $self->{_draw}{fcol_detect}[$x]{align} //
                             'left';
     my $valign =
-        $self->get_cell_style($y, $x, 'valign') //
-            $self->get_row_style($y, 'valign') //
-                $self->get_column_style($x, 'valign') //
+        $self->get_eff_cell_style($oy, $x, 'valign') //
+            $self->get_eff_row_style($oy, 'valign') //
+                $self->get_eff_column_style($x, 'valign') //
                     $self->{cell_valign} //
                         $self->{_draw}{fcol_detect}[$x]{valign} //
                             'top';
@@ -1267,7 +1418,6 @@ sub _get_data_cell_lines {
     my $tpad = $self->{_draw}{frow_tpads}[$y];
     my $bpad = $self->{_draw}{frow_bpads}[$y];
 
-    #say "D:oy=$oy, y=$y, x=$x, fgcolor=$fgcolor, bgcolor=$bgcolor";
     my $res = $self->_get_cell_lines(
         $cell,                            # text
         $self->{_draw}{fcol_widths}[$x],  # width
@@ -1282,6 +1432,16 @@ sub draw {
     my ($self) = @_;
 
     $self->_prepare_draw;
+
+    $self->{_draw}{buf} = []; # output buffer
+    $self->{_draw}{y} = 0; # current line
+
+    # ansi codes to set and reset line-drawing mode.
+    {
+        my $bs = $self->{border_style};
+        $self->{_draw}{set_line_draw_mode}   = $bs->{box_chars} ? "\e(0" : "";
+        $self->{_draw}{reset_line_draw_mode} = $bs->{box_chars} ? "\e(B" : "";
+    }
 
     my $cols  = $self->{columns};
     my $fcols = $self->{_draw}{fcols};
@@ -1437,7 +1597,7 @@ Text::ANSITable - Create nice formatted tables using extended ASCII and ANSI col
 
 =head1 VERSION
 
-version 0.28
+version 0.29
 
 =head1 SYNOPSIS
 
@@ -1495,7 +1655,7 @@ fine-grained options to customize appearance.
 
 It uses L<Moo> object system.
 
-=for Pod::Coverage ^(BUILD|draw_.+|get_color_reset|get_border_char|handle_.+)$
+=for Pod::Coverage ^(BUILD|draw_.+|get_color_reset|get_border_char)$
 
 =begin HTML
 
@@ -1575,6 +1735,14 @@ lowest):
 
 This sets width for all columns.
 
+=item * conditional column styles
+
+The example below sets column width to 10 for columns whose names matching
+C</[acm]time/>, else sets the column width to 20.
+
+ $t->add_cond_column_style(sub {  /[acm]time/ }, width => 10);
+ $t->add_cond_column_style(sub { !/[acm]time/ }, width => 20);
+
 =item * per-column C<width> style
 
  $t->set_column_style('colname', width => 20);
@@ -1593,6 +1761,13 @@ lowest):
 =item * table-level C<cell_height> attribute
 
 This sets height for all rows.
+
+=item * conditional row styles
+
+The example below sets row height to 2 for every odd rows, and 1 for even rows.
+
+ $t->add_cond_row_style(sub { $_ % 2 == 0 }, height => 2);
+ $t->add_cond_row_style(sub { $_ % 2      }, height => 1);
 
 =item * per-row C<height> style
 
@@ -1616,6 +1791,14 @@ This sets left and right padding for all columns.
 =item * table-level C<cell_lpad> and C<cell_rpad> attributes
 
 They set left and right padding for all columns, respectively.
+
+=item * conditional column C<pad> style
+
+ $t->add_cond_column_style($cond, pad => 0);
+
+=item * conditional column C<lpad>/C<rpad> style
+
+ $t->add_cond_column_style($cond, lpad => 1, rpad => 2);
 
 =item * per-column C<pad> style
 
@@ -1642,6 +1825,12 @@ This sets top and bottom padding for all rows.
 =item * table-level C<cell_tpad>/C<cell_bpad> attributes
 
 They set top/bottom padding separately for all rows.
+
+=item * conditional row C<vpad> style
+
+Example:
+
+ $t->add_cond_row_style($cond, vpad => 1);
 
 =item * per-row C<vpad> style
 
@@ -1683,12 +1872,24 @@ will be converted to the appropriate terminal color.
 Can also be set to a coderef which will receive ($rownum, $colname) and should
 return an RGB color.
 
+=item * conditional column C<fgcolor> and C<bgcolor> style
+
+Example:
+
+ $t->add_cond_column_style($cond, fgcolor => 'fa8888', bgcolor => '202020');
+
 =item * per-column C<fgcolor> and C<bgcolor> styles
 
 Example:
 
  $t->set_column_style('colname', fgcolor => 'fa8888');
  $t->set_column_style('colname', bgcolor => '202020');
+
+=item * conditional row C<fgcolor> and C<bgcolor> style
+
+Example:
+
+ $t->add_cond_row_style($cond, fgcolor => 'fa8888', bgcolor => '202020');
 
 =item * per-row C<fgcolor> and C<bgcolor> styles
 
@@ -1700,6 +1901,10 @@ When adding row/rows:
 
  $t->add_row($row, {fgcolor=>..., bgcolor=>...});
  $t->add_rows($rows, {bgcolor=>...});
+
+=item * conditional cell C<fgcolor> and C<bgcolor> style
+
+ $t->add_cond_cell_style($cond, fgcolor=>..., bgcolor=>...);
 
 =item * per-cell C<fgcolor> and C<bgcolor> styles
 
@@ -1724,6 +1929,10 @@ lowest):
 
 =item * table-level C<cell_align> and C<cell_valign> attribute
 
+=item * conditional column C<align> and <valign> styles
+
+ $t->add_cond_column_style($cond, align=>..., valign=>...);
+
 =item * per-column C<align> and C<valign> styles
 
 Example:
@@ -1731,7 +1940,15 @@ Example:
  $t->set_column_style($colname, align  => 'middle'); # or left, or right
  $t->set_column_style($colname, valign => 'top');    # or bottom, or middle
 
+=item * conditional row C<align> and <valign> styles
+
+ $t->add_cond_row_style($cond, align=>..., valign=>...);
+
 =item * per-row C<align> and C<valign> styles
+
+=item * conditional cell C<align> and <valign> styles
+
+ $t->add_cond_cell_style($cond, align=>..., valign=>...);
 
 =item * per-cell C<align> and C<valign> styles
 
@@ -1749,7 +1966,99 @@ C<date>) or an array (like C<< ['date', ['centerpad', {width=>20}]] >>).
 
 See L<Data::Unixish> or install L<App::dux> and then run C<dux -l> to see what
 functions are available. Functions of interest to formatting data include:
-C<bool>, C<num>, C<sprintf>, C<sprintfn>, C<wrap>, (among others).
+C<bool>, C<num>, C<sprintf>, C<sprintfn>, C<wrap>, C<ansi::*> (in
+L<Data::Unixish::ansi>), (among others).
+
+=head1 CONDITIONAL STYLES
+
+As an alternative to setting styles for specific {column,row,cell}, you can also
+create conditional styles. You specify a Perl code for the condition, then if
+the condition evaluates to true, the corresponding styles are applied to the
+corresponding {column,row,cell}.
+
+To add a conditional style, use the C<add_cond_{column,row,cell}_style> methods.
+These methods accept condition code as its first argument and one or more styles
+in the subsequent argument(s). For example:
+
+ $t->add_cond_row_style(sub { $_ % 2 }, bgcolor=>'202020');
+
+The above example will set row bgcolor for odd rows. You can add more
+conditional styles:
+
+ $t->add_cond_row_style(sub { $_ % 2 == 0 }, bgcolor=>'404040');
+
+All the conditions will be evaluated and the applicable styles will be merged
+together. For example, if we add a third conditional row style:
+
+ $t->add_cond_row_style(sub { $_ % 10 == 0 }, height=>2, fgcolor=>'ffff00');
+
+then every tenth row will have its height set to 2, fgcolor set to ffff00, and
+bgcolor set to 404040 (from the second conditional).
+
+Condition coderef will be called with these arguments:
+
+ ($self, %args)
+
+Available keys in C<%args> for conditional column styles: C<col> (int, column
+index), C<colname> (str, column name). Additionally, C<$_> will be set locally
+to the column index.
+
+Available keys in C<%args> for conditional row styles: C<row> (int, row index).
+Additionally, C<$_> will be set locally to the row index.
+
+Available keys in C<%args> for conditional cell styles: C<content> (str), C<col>
+(int, column index), C<row> (int, row index). Additionally, C<$_> will be set
+locally to the cell content.
+
+Coderef should return boolean indicating whether style should be applied to a
+particular column/row/cell. When returning a true value, coderef can also return
+a hashref to return additional styles that will be merged/applied too.
+
+=head1 STYLE SETS
+
+A style set is just a collection of style settings that can be applied.
+Organizing styles into style sets makes applying the styles simpler and more
+reusable.
+
+More than one style sets can be applied.
+
+Style set module accepts arguments.
+
+For example, the L<Text::ANSITable::StyleSet::AltRow> style set defines this:
+
+ has odd_bgcolor  => (is => 'rw');
+ has even_bgcolor => (is => 'rw');
+ has odd_fgcolor  => (is => 'rw');
+ has even_fgcolor => (is => 'rw');
+
+ sub apply {
+     my ($self, $table) = @_;
+
+     $table->add_cond_row_style(sub {
+         my ($t, %args) = @_;
+         my %styles;
+         if ($_ % 2) {
+             $styles{bgcolor} = $self->odd_bgcolor
+                 if defined $self->odd_bgcolor;
+             $styles{fgcolor} = $self->odd_fgcolor
+                 if defined $self->odd_bgcolor;
+         } else {
+             $styles{bgcolor} = $self->even_bgcolor
+                 if defined $self->even_bgcolor;
+             $styles{fgcolor} = $self->even_fgcolor
+                 if defined $self->even_bgcolor;
+         }
+         \%styles;
+     });
+ }
+
+To apply this style set:
+
+ $t->apply_style_set("AltRow", odd_bgcolor=>"003300", even_bgcolor=>"000000");
+
+To create a new style set, create a module under C<Text::ANSITable::StyleSet::>
+like the above example. Please see the other existing style set modules for more
+examples.
 
 =head1 ATTRIBUTES
 
@@ -1826,6 +2135,10 @@ Whether to use Unicode (UTF8) characters. Default is taken from C<UTF8>
 environment variable, or detected using L<Term::Detect>, or guessed via L<LANG>
 environment variable. If C<use_utf8> is set to 0, an attempt to select a border
 style that uses Unicode characters will result in an exception.
+
+(In the future, setting C<use_utf8> to 0 might opt the module to use the
+non-"mb_*" version of functions from L<Text::ANSI::Util>, e.g. C<ta_wrap()>
+instead of C<ta_mbwrap()>, and so on).
 
 =head2 border_style => HASH
 
@@ -2003,6 +2316,24 @@ Set per-column style(s) for column named/numbered C<$col>. Available values for
 C<$style>: C<align>, C<valign>, C<pad>, C<lpad>, C<rpad>, C<width>, C<formats>,
 C<fgcolor>, C<bgcolor>, C<type>, C<wrap>.
 
+=head2 $t->get_cond_column_styles => ARRAY
+
+Get all the conditional column styles set so far.
+
+=head2 $t->add_cond_column_style($cond, $style=>$val[, $style2=>$val2 ...])
+
+Add a new conditional column style. See L</"CONDITIONAL STYLES"> for more
+details on conditional style.
+
+=for comment | =head2 $t->clear_cond_column_styles | Clear all the conditional column styles.
+
+=head2 $t->get_eff_column_style($col, $style) => VAL
+
+Get "effective" column style named C<$style> for a particular column. Effective
+column style is calculated from all the conditional column styles and the
+per-column styles then merged together. This is the per-column style actually
+applied.
+
 =head2 $t->get_row_style($row_num) => VAL
 
 Get per-row style for row numbered C<$row_num>.
@@ -2013,14 +2344,53 @@ Set per-row style(s) for row numbered C<$row_num>. Available values for
 C<$style>: C<align>, C<valign>, C<height>, C<vpad>, C<tpad>, C<bpad>,
 C<fgcolor>, C<bgcolor>.
 
+=head2 $t->get_cond_row_styles => ARRAY
+
+Get all the conditional row styles set so far.
+
+=head2 $t->add_cond_row_style($cond, $style=>$val[, $style2=>$val2 ...])
+
+Add a new conditional row style. See L</"CONDITIONAL STYLES"> for more details
+on conditional style.
+
+=for comment | =head2 $t->clear_cond_row_styles | Clear all the conditional row styles.
+
+=head2 $t->get_eff_row_style($row_num, $style) => VAL
+
+Get "effective" row style named C<$style> for a particular row. Effective row
+style is calculated from all the conditional row styles and the per-row styles
+then merged together. This is the per-row style actually applied.
+
 =head2 $t->get_cell_style($row_num, $col, $style) => VAL
 
-Get per-cell style.
+Get per-cell style named C<$style> for a particular cell. Return undef if there
+is no per-cell style with that name.
 
 =head2 $t->set_cell_style($row_num, $col, $style=>$newval[, $style2=>$newval2, ...])
 
 Set per-cell style(s). Available values for C<$style>: C<align>, C<valign>,
 C<formats>, C<fgcolor>, C<bgcolor>.
+
+=head2 $t->get_cond_cell_styles => ARRAY
+
+Get all the conditional cell styles set so far.
+
+=head2 $t->add_cond_cell_style($cond, $style=>$val[, $style2=>$val2 ...])
+
+Add a new conditional cell style. See L</"CONDITIONAL STYLES"> for more details
+on conditional style.
+
+=for comment | =head2 $t->clear_cond_cell_styles | Clear all the conditional cell styles.
+
+=head2 $t->get_eff_cell_style($row_num, $col, $style) => VAL
+
+Get "effective" cell style named C<$style> for a particular cell. Effective cell
+style is calculated from all the conditional cell styles and the per-cell styles
+then merged together. This is the per-cell style actually applied.
+
+=head2 $t->apply_style_set($name, %args)
+
+Apply a style set. See L</"STYLE SETS"> for more details.
 
 =head2 $t->draw => STR
 
@@ -2096,11 +2466,21 @@ pairs. Example:
 will display the second-on-the-left, second-on-the-top cell with green
 background color.
 
+=head2 ANSITABLE_STYLE_SETS => JSON
+
+Can be used to apply style sets. Value should be a JSON-encoded array. Each
+element must be a style set name or a 2-element array containing style set name
+and its arguments (C<< [$name, \%args] >>). Example:
+
+ % ANSITABLE_STYLE_SETS='[["AltRow",{"odd_bgcolor":"003300"}]]'
+
+will display table with row separator lines after every row.
+
 =head1 FAQ
 
 =head2 General
 
-=head3 Output is too fancy! I just want to generate some plain (Text::ASCIITable-like) output to be pasted to my document.
+=head3 Output is too fancy! I just want to generate some plain (Text::ASCIITable-like) output to be copy-pasted to my document.
 
  $t->use_utf8(0);
  $t->use_box_chars(0);
@@ -2270,6 +2650,31 @@ e.g.:
 
 See L<Data::Unixish::bool> for more details.
 
+=head3 How do I do conditional cell formatting?
+
+For example, if the cell contains the string "Cuti", you want to color the cell
+yellow. Otherwise, you want to color the cell red. You can use the C<formats>
+column style with the L<Data::Unixish::cond> function:
+
+ $t->set_column_style($colname, formats => [
+     [cond => {
+         if   => '$_ =~ /Cuti/',
+         then => ["ansi::color", {color=>"yellow"}],
+         else => ["ansi::color", {color=>"red"}],
+     }]
+ ]);
+
+Or from the command-line (assuming the column you want to format is called
+C<ind_name>):
+
+ % ANSITABLE_COLUMN_STYLES='{"ind_name":{"formats":[["cond",{"if":"$_ =~ /Cuti/", "then":["ansi::color",{"color":"red"}], "else":["ansi::color",{"color":"green"}]}]]}}' program-that-outputs-ansitable ...
+
+Or you can also use the C<add_cond_{cell,row,column}> methods. See
+L</"CONDITIONAL STYLES"> for more details.
+
+You can also see the C<Text::ANSITable::StyleSet::*> modules which might already
+package common conditional formatting needs.
+
 =head2 Border
 
 =head3 How to hide borders?
@@ -2362,6 +2767,14 @@ Aside from doing C<< $t->set_row_style($row_num, bgcolor=>...) >> for each row,
 you can also do this:
 
  $t->cell_bgcolor(sub { my ($self, %args) = @_; $args{row_num} % 2 ? '202020' : undef });
+
+Or, you can use conditional row styles:
+
+ $t->add_cond_row_style(sub { $_ % 2 }, {bgcolor=>'202020'});
+
+Or, you can use the L<Text::ANSITable::StyleSet::AltRow> style set:
+
+ $t->apply_style_set(AltRow => {even_bgcolor=>'202020'});
 
 =head1 TODO/BUGS
 

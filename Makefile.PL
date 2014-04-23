@@ -35,9 +35,7 @@ my %WriteMakefileArgs = (
     "SHARYANTO::Color::Util" => 0,
     "SHARYANTO::Role::BorderStyle" => "0.58",
     "SHARYANTO::Role::ColorTheme" => "0.58",
-    "SHARYANTO::String::Util" => 0,
     "Text::ANSI::Util" => "0.08",
-    "Text::WideChar::Util" => "0.13",
     "experimental" => 0
   },
   "TEST_REQUIRES" => {
@@ -47,7 +45,7 @@ my %WriteMakefileArgs = (
     "Test::Exception" => 0,
     "Test::More" => "0.98"
   },
-  "VERSION" => "0.28",
+  "VERSION" => "0.29",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -69,11 +67,9 @@ my %FallbackPrereqs = (
   "SHARYANTO::Color::Util" => 0,
   "SHARYANTO::Role::BorderStyle" => "0.58",
   "SHARYANTO::Role::ColorTheme" => "0.58",
-  "SHARYANTO::String::Util" => 0,
   "Test::Exception" => 0,
   "Test::More" => "0.98",
   "Text::ANSI::Util" => "0.08",
-  "Text::WideChar::Util" => "0.13",
   "experimental" => 0
 );
 

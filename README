@@ -3,7 +3,7 @@ NAME
     ANSI colors
 
 VERSION
-    version 0.28
+    version 0.29
 
 SYNOPSIS
      use 5.010;
@@ -117,6 +117,14 @@ COLUMN WIDTHS
 
         This sets width for all columns.
 
+    *   conditional column styles
+
+        The example below sets column width to 10 for columns whose names
+        matching "/[acm]time/", else sets the column width to 20.
+
+         $t->add_cond_column_style(sub {  /[acm]time/ }, width => 10);
+         $t->add_cond_column_style(sub { !/[acm]time/ }, width => 20);
+
     *   per-column "width" style
 
          $t->set_column_style('colname', width => 20);
@@ -130,6 +138,14 @@ ROW HEIGHTS
     *   table-level "cell_height" attribute
 
         This sets height for all rows.
+
+    *   conditional row styles
+
+        The example below sets row height to 2 for every odd rows, and 1 for
+        even rows.
+
+         $t->add_cond_row_style(sub { $_ % 2 == 0 }, height => 2);
+         $t->add_cond_row_style(sub { $_ % 2      }, height => 1);
 
     *   per-row "height" style
 
@@ -148,6 +164,14 @@ CELL (HORIZONTAL) PADDING
     *   table-level "cell_lpad" and "cell_rpad" attributes
 
         They set left and right padding for all columns, respectively.
+
+    *   conditional column "pad" style
+
+         $t->add_cond_column_style($cond, pad => 0);
+
+    *   conditional column "lpad"/"rpad" style
+
+         $t->add_cond_column_style($cond, lpad => 1, rpad => 2);
 
     *   per-column "pad" style
 
@@ -169,6 +193,12 @@ ROW VERTICAL PADDING
     *   table-level "cell_tpad"/"cell_bpad" attributes
 
         They set top/bottom padding separately for all rows.
+
+    *   conditional row "vpad" style
+
+        Example:
+
+         $t->add_cond_row_style($cond, vpad => 1);
 
     *   per-row "vpad" style
 
@@ -206,12 +236,24 @@ CELL COLORS
         Can also be set to a coderef which will receive ($rownum, $colname)
         and should return an RGB color.
 
+    *   conditional column "fgcolor" and "bgcolor" style
+
+        Example:
+
+         $t->add_cond_column_style($cond, fgcolor => 'fa8888', bgcolor => '202020');
+
     *   per-column "fgcolor" and "bgcolor" styles
 
         Example:
 
          $t->set_column_style('colname', fgcolor => 'fa8888');
          $t->set_column_style('colname', bgcolor => '202020');
+
+    *   conditional row "fgcolor" and "bgcolor" style
+
+        Example:
+
+         $t->add_cond_row_style($cond, fgcolor => 'fa8888', bgcolor => '202020');
 
     *   per-row "fgcolor" and "bgcolor" styles
 
@@ -223,6 +265,10 @@ CELL COLORS
 
          $t->add_row($row, {fgcolor=>..., bgcolor=>...});
          $t->add_rows($rows, {bgcolor=>...});
+
+    *   conditional cell "fgcolor" and "bgcolor" style
+
+         $t->add_cond_cell_style($cond, fgcolor=>..., bgcolor=>...);
 
     *   per-cell "fgcolor" and "bgcolor" styles
 
@@ -242,6 +288,10 @@ CELL (HORIZONTAL AND VERTICAL) ALIGNMENT
 
     *   table-level "cell_align" and "cell_valign" attribute
 
+    *   conditional column "align" and <valign> styles
+
+         $t->add_cond_column_style($cond, align=>..., valign=>...);
+
     *   per-column "align" and "valign" styles
 
         Example:
@@ -249,7 +299,15 @@ CELL (HORIZONTAL AND VERTICAL) ALIGNMENT
          $t->set_column_style($colname, align  => 'middle'); # or left, or right
          $t->set_column_style($colname, valign => 'top');    # or bottom, or middle
 
+    *   conditional row "align" and <valign> styles
+
+         $t->add_cond_row_style($cond, align=>..., valign=>...);
+
     *   per-row "align" and "valign" styles
+
+    *   conditional cell "align" and <valign> styles
+
+         $t->add_cond_cell_style($cond, align=>..., valign=>...);
 
     *   per-cell "align" and "valign" styles
 
@@ -265,7 +323,99 @@ CELL FORMATS
 
     See Data::Unixish or install App::dux and then run "dux -l" to see what
     functions are available. Functions of interest to formatting data
-    include: "bool", "num", "sprintf", "sprintfn", "wrap", (among others).
+    include: "bool", "num", "sprintf", "sprintfn", "wrap", "ansi::*" (in
+    Data::Unixish::ansi), (among others).
+
+CONDITIONAL STYLES
+    As an alternative to setting styles for specific {column,row,cell}, you
+    can also create conditional styles. You specify a Perl code for the
+    condition, then if the condition evaluates to true, the corresponding
+    styles are applied to the corresponding {column,row,cell}.
+
+    To add a conditional style, use the "add_cond_{column,row,cell}_style"
+    methods. These methods accept condition code as its first argument and
+    one or more styles in the subsequent argument(s). For example:
+
+     $t->add_cond_row_style(sub { $_ % 2 }, bgcolor=>'202020');
+
+    The above example will set row bgcolor for odd rows. You can add more
+    conditional styles:
+
+     $t->add_cond_row_style(sub { $_ % 2 == 0 }, bgcolor=>'404040');
+
+    All the conditions will be evaluated and the applicable styles will be
+    merged together. For example, if we add a third conditional row style:
+
+     $t->add_cond_row_style(sub { $_ % 10 == 0 }, height=>2, fgcolor=>'ffff00');
+
+    then every tenth row will have its height set to 2, fgcolor set to
+    ffff00, and bgcolor set to 404040 (from the second conditional).
+
+    Condition coderef will be called with these arguments:
+
+     ($self, %args)
+
+    Available keys in %args for conditional column styles: "col" (int,
+    column index), "colname" (str, column name). Additionally, $_ will be
+    set locally to the column index.
+
+    Available keys in %args for conditional row styles: "row" (int, row
+    index). Additionally, $_ will be set locally to the row index.
+
+    Available keys in %args for conditional cell styles: "content" (str),
+    "col" (int, column index), "row" (int, row index). Additionally, $_ will
+    be set locally to the cell content.
+
+    Coderef should return boolean indicating whether style should be applied
+    to a particular column/row/cell. When returning a true value, coderef
+    can also return a hashref to return additional styles that will be
+    merged/applied too.
+
+STYLE SETS
+    A style set is just a collection of style settings that can be applied.
+    Organizing styles into style sets makes applying the styles simpler and
+    more reusable.
+
+    More than one style sets can be applied.
+
+    Style set module accepts arguments.
+
+    For example, the Text::ANSITable::StyleSet::AltRow style set defines
+    this:
+
+     has odd_bgcolor  => (is => 'rw');
+     has even_bgcolor => (is => 'rw');
+     has odd_fgcolor  => (is => 'rw');
+     has even_fgcolor => (is => 'rw');
+
+     sub apply {
+         my ($self, $table) = @_;
+
+         $table->add_cond_row_style(sub {
+             my ($t, %args) = @_;
+             my %styles;
+             if ($_ % 2) {
+                 $styles{bgcolor} = $self->odd_bgcolor
+                     if defined $self->odd_bgcolor;
+                 $styles{fgcolor} = $self->odd_fgcolor
+                     if defined $self->odd_bgcolor;
+             } else {
+                 $styles{bgcolor} = $self->even_bgcolor
+                     if defined $self->even_bgcolor;
+                 $styles{fgcolor} = $self->even_fgcolor
+                     if defined $self->even_bgcolor;
+             }
+             \%styles;
+         });
+     }
+
+    To apply this style set:
+
+     $t->apply_style_set("AltRow", odd_bgcolor=>"003300", even_bgcolor=>"000000");
+
+    To create a new style set, create a module under
+    "Text::ANSITable::StyleSet::" like the above example. Please see the
+    other existing style set modules for more examples.
 
 ATTRIBUTES
   columns => ARRAY OF STR
@@ -336,6 +486,10 @@ ATTRIBUTES
     LANG environment variable. If "use_utf8" is set to 0, an attempt to
     select a border style that uses Unicode characters will result in an
     exception.
+
+    (In the future, setting "use_utf8" to 0 might opt the module to use the
+    non-"mb_*" version of functions from Text::ANSI::Util, e.g. "ta_wrap()"
+    instead of "ta_mbwrap()", and so on).
 
   border_style => HASH
     Border style specification to use.
@@ -480,6 +634,19 @@ METHODS
     for $style: "align", "valign", "pad", "lpad", "rpad", "width",
     "formats", "fgcolor", "bgcolor", "type", "wrap".
 
+  $t->get_cond_column_styles => ARRAY
+    Get all the conditional column styles set so far.
+
+  $t->add_cond_column_style($cond, $style=>$val[, $style2=>$val2 ...])
+    Add a new conditional column style. See "CONDITIONAL STYLES" for more
+    details on conditional style.
+
+  $t->get_eff_column_style($col, $style) => VAL
+    Get "effective" column style named $style for a particular column.
+    Effective column style is calculated from all the conditional column
+    styles and the per-column styles then merged together. This is the
+    per-column style actually applied.
+
   $t->get_row_style($row_num) => VAL
     Get per-row style for row numbered $row_num.
 
@@ -488,12 +655,42 @@ METHODS
     $style: "align", "valign", "height", "vpad", "tpad", "bpad", "fgcolor",
     "bgcolor".
 
+  $t->get_cond_row_styles => ARRAY
+    Get all the conditional row styles set so far.
+
+  $t->add_cond_row_style($cond, $style=>$val[, $style2=>$val2 ...])
+    Add a new conditional row style. See "CONDITIONAL STYLES" for more
+    details on conditional style.
+
+  $t->get_eff_row_style($row_num, $style) => VAL
+    Get "effective" row style named $style for a particular row. Effective
+    row style is calculated from all the conditional row styles and the
+    per-row styles then merged together. This is the per-row style actually
+    applied.
+
   $t->get_cell_style($row_num, $col, $style) => VAL
-    Get per-cell style.
+    Get per-cell style named $style for a particular cell. Return undef if
+    there is no per-cell style with that name.
 
   $t->set_cell_style($row_num, $col, $style=>$newval[, $style2=>$newval2, ...])
     Set per-cell style(s). Available values for $style: "align", "valign",
     "formats", "fgcolor", "bgcolor".
+
+  $t->get_cond_cell_styles => ARRAY
+    Get all the conditional cell styles set so far.
+
+  $t->add_cond_cell_style($cond, $style=>$val[, $style2=>$val2 ...])
+    Add a new conditional cell style. See "CONDITIONAL STYLES" for more
+    details on conditional style.
+
+  $t->get_eff_cell_style($row_num, $col, $style) => VAL
+    Get "effective" cell style named $style for a particular cell. Effective
+    cell style is calculated from all the conditional cell styles and the
+    per-cell styles then merged together. This is the per-cell style
+    actually applied.
+
+  $t->apply_style_set($name, %args)
+    Apply a style set. See "STYLE SETS" for more details.
 
   $t->draw => STR
     Render table.
@@ -556,9 +753,18 @@ ENVIRONMENT
     will display the second-on-the-left, second-on-the-top cell with green
     background color.
 
+  ANSITABLE_STYLE_SETS => JSON
+    Can be used to apply style sets. Value should be a JSON-encoded array.
+    Each element must be a style set name or a 2-element array containing
+    style set name and its arguments ("[$name, \%args]"). Example:
+
+     % ANSITABLE_STYLE_SETS='[["AltRow",{"odd_bgcolor":"003300"}]]'
+
+    will display table with row separator lines after every row.
+
 FAQ
   General
-   Output is too fancy! I just want to generate some plain (Text::ASCIITable-like) output to be pasted to my document.
+   Output is too fancy! I just want to generate some plain (Text::ASCIITable-like) output to be copy-pasted to my document.
      $t->use_utf8(0);
      $t->use_box_chars(0);
      $t->use_color(0);
@@ -716,6 +922,30 @@ FAQ
 
     See Data::Unixish::bool for more details.
 
+   How do I do conditional cell formatting?
+    For example, if the cell contains the string "Cuti", you want to color
+    the cell yellow. Otherwise, you want to color the cell red. You can use
+    the "formats" column style with the Data::Unixish::cond function:
+
+     $t->set_column_style($colname, formats => [
+         [cond => {
+             if   => '$_ =~ /Cuti/',
+             then => ["ansi::color", {color=>"yellow"}],
+             else => ["ansi::color", {color=>"red"}],
+         }]
+     ]);
+
+    Or from the command-line (assuming the column you want to format is
+    called "ind_name"):
+
+     % ANSITABLE_COLUMN_STYLES='{"ind_name":{"formats":[["cond",{"if":"$_ =~ /Cuti/", "then":["ansi::color",{"color":"red"}], "else":["ansi::color",{"color":"green"}]}]]}}' program-that-outputs-ansitable ...
+
+    Or you can also use the "add_cond_{cell,row,column}" methods. See
+    "CONDITIONAL STYLES" for more details.
+
+    You can also see the "Text::ANSITable::StyleSet::*" modules which might
+    already package common conditional formatting needs.
+
   Border
    How to hide borders?
     There is currently no "show_border" attribute. Choose border styles like
@@ -795,6 +1025,14 @@ FAQ
     row, you can also do this:
 
      $t->cell_bgcolor(sub { my ($self, %args) = @_; $args{row_num} % 2 ? '202020' : undef });
+
+    Or, you can use conditional row styles:
+
+     $t->add_cond_row_style(sub { $_ % 2 }, {bgcolor=>'202020'});
+
+    Or, you can use the Text::ANSITable::StyleSet::AltRow style set:
+
+     $t->apply_style_set(AltRow => {even_bgcolor=>'202020'});
 
 TODO/BUGS
     Most color themes still look crappy on 256 colors (I develop on

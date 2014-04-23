@@ -4,14 +4,15 @@ use warnings;
 
 # this test was generated with Dist::Zilla::Plugin::Test::Compile 2.039
 
-use Test::More  tests => 5 + ($ENV{AUTHOR_TESTING} ? 1 : 0);
+use Test::More  tests => 6 + ($ENV{AUTHOR_TESTING} ? 1 : 0);
 
 
 
 my @module_files = (
     'Text/ANSITable.pm',
     'Text/ANSITable/BorderStyle/Default.pm',
-    'Text/ANSITable/ColorTheme/Default.pm'
+    'Text/ANSITable/ColorTheme/Default.pm',
+    'Text/ANSITable/StyleSet/AltRow.pm'
 );
 
 my @scripts = (
