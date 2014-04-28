@@ -6,7 +6,7 @@ use warnings;
 
 use Text::ANSITable;
 
-our $VERSION = '0.31'; # VERSION
+our $VERSION = '0.32'; # VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -41,7 +41,7 @@ ansitable-list-style-sets - List available style sets for Text::ANSITable
 
 =head1 VERSION
 
-version 0.31
+This document describes version 0.32 of module ansitable-list-style-sets (in distribution Text-ANSITable), released on 2014-04-28.
 
 =head1 HOMEPAGE
 

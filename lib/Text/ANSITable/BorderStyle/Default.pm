@@ -5,7 +5,7 @@ use strict;
 use utf8;
 use warnings;
 
-our $VERSION = '0.31'; # VERSION
+our $VERSION = '0.32'; # VERSION
 
 our %border_styles = (
 
@@ -437,11 +437,7 @@ Text::ANSITable::BorderStyle::Default - Default border styles
 
 =head1 VERSION
 
-version 0.31
-
-=head1 RELEASE DATE
-
-2014-04-23
+This document describes version 0.32 of module Text::ANSITable::BorderStyle::Default (in distribution Text-ANSITable), released on 2014-04-28.
 
 =head1 HOMEPAGE
 
