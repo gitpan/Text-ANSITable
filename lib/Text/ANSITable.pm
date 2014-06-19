@@ -10,7 +10,7 @@ use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
 
-our $VERSION = '0.32'; # VERSION
+our $VERSION = '0.33'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -203,8 +203,8 @@ sub BUILD {
         # does not support unicode, it actually can display some uni characters
         # like single borders, so we use it as the default here instead of
         # singleo_ascii (linux vc doesn't seem to support box_chars).
-        my $linux_vc = $self->detect_terminal->{emulator_engine} eq 'linux' &&
-            !defined($ENV{UTF8});
+        my $emu_eng  = $self->detect_terminal->{emulator_engine} // '';
+        my $linux_vc = $emu_eng eq 'linux' && !defined($ENV{UTF8});
         if ($linux_vc) {
             $use_utf8 = 1;
             $bs = 'Default::singleo_utf8';
@@ -1636,7 +1636,7 @@ Text::ANSITable - Create nice formatted tables using extended ASCII and ANSI col
 
 =head1 VERSION
 
-This document describes version 0.32 of module Text::ANSITable (in distribution Text-ANSITable), released on 2014-04-28.
+This document describes version 0.33 of Text::ANSITable (from Perl distribution Text-ANSITable), released on 2014-06-19.
 
 =head1 SYNOPSIS
 
@@ -2005,8 +2005,8 @@ C<date>) or an array (like C<< ['date', ['centerpad', {width=>20}]] >>).
 
 See L<Data::Unixish> or install L<App::dux> and then run C<dux -l> to see what
 functions are available. Functions of interest to formatting data include:
-C<bool>, C<num>, C<sprintf>, C<sprintfn>, C<wrap>, C<ansi::*> (in
-L<Data::Unixish::ansi>), (among others).
+C<bool>, C<num>, C<sprintf>, C<sprintfn>, C<wrap>, C<ANSI::*> (in
+L<Data::Unixish::ANSI>), (among others).
 
 =head1 CONDITIONAL STYLES
 
@@ -2684,7 +2684,7 @@ contain those):
 =head3 How do I highlight text with color?
 
 The C<ansi::highlight> dux function can be used to highlight text (see:
-L<Data::Unixish::ansi::highlight>).
+L<Data::Unixish::ANSI::highlight>).
 
  $t->set_column_style(2, formats => [[highlight => {pattern=>$pat}]]);
 

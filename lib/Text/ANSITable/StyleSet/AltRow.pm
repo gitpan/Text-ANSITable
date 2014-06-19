@@ -51,7 +51,7 @@ Text::ANSITable::StyleSet::AltRow
 
 =head1 VERSION
 
-This document describes version 0.32 of module Text::ANSITable::StyleSet::AltRow (in distribution Text-ANSITable), released on 2014-04-28.
+This document describes version 0.33 of Text::ANSITable::StyleSet::AltRow (from Perl distribution Text-ANSITable), released on 2014-06-19.
 
 =for Pod::Coverage ^(summary|apply)$
 

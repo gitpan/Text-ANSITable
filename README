@@ -3,8 +3,8 @@ NAME
     ANSI colors
 
 VERSION
-    This document describes version 0.32 of module Text::ANSITable (in
-    distribution Text-ANSITable), released on 2014-04-28.
+    This document describes version 0.33 of Text::ANSITable (from Perl
+    distribution Text-ANSITable), released on 2014-06-19.
 
 SYNOPSIS
      use 5.010;
@@ -324,8 +324,8 @@ CELL FORMATS
 
     See Data::Unixish or install App::dux and then run "dux -l" to see what
     functions are available. Functions of interest to formatting data
-    include: "bool", "num", "sprintf", "sprintfn", "wrap", "ansi::*" (in
-    Data::Unixish::ansi), (among others).
+    include: "bool", "num", "sprintf", "sprintfn", "wrap", "ANSI::*" (in
+    Data::Unixish::ANSI), (among others).
 
 CONDITIONAL STYLES
     As an alternative to setting styles for specific {column,row,cell}, you
@@ -918,7 +918,7 @@ FAQ
 
    How do I highlight text with color?
     The "ansi::highlight" dux function can be used to highlight text (see:
-    Data::Unixish::ansi::highlight).
+    Data::Unixish::ANSI::highlight).
 
      $t->set_column_style(2, formats => [[highlight => {pattern=>$pat}]]);
 

@@ -7,7 +7,7 @@ use warnings;
 use Function::Fallback::CoreOrPP qw(clone);
 use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
 
-our $VERSION = '0.32'; # VERSION
+our $VERSION = '0.33'; # VERSION
 
 our %color_themes = (
 
@@ -122,7 +122,7 @@ Text::ANSITable::ColorTheme::Default - Default color themes
 
 =head1 VERSION
 
-This document describes version 0.32 of module Text::ANSITable::ColorTheme::Default (in distribution Text-ANSITable), released on 2014-04-28.
+This document describes version 0.33 of Text::ANSITable::ColorTheme::Default (from Perl distribution Text-ANSITable), released on 2014-06-19.
 
 =head1 HOMEPAGE
 
