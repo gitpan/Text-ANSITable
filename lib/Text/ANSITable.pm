@@ -10,7 +10,7 @@ use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
 
-our $VERSION = '0.33'; # VERSION
+our $VERSION = '0.34'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -192,6 +192,11 @@ sub BUILD {
             $self->{$k} = $v;
         }
     }
+
+    # set "pseudo"-attributes, they are not declared using 'has' so Moo doesn't
+    # set them and we need to set them manually
+    if ($args->{border_style}) { $self->border_style($args->{border_style}) }
+    if ($args->{color_theme}) { $self->color_theme($args->{color_theme}) }
 
     # pick a default border style
     unless ($self->{border_style}) {
@@ -1636,7 +1641,7 @@ Text::ANSITable - Create nice formatted tables using extended ASCII and ANSI col
 
 =head1 VERSION
 
-This document describes version 0.33 of Text::ANSITable (from Perl distribution Text-ANSITable), released on 2014-06-19.
+This document describes version 0.34 of Text::ANSITable (from Perl distribution Text-ANSITable), released on 2014-07-10.
 
 =head1 SYNOPSIS
 
@@ -1653,10 +1658,10 @@ This document describes version 0.33 of Text::ANSITable (from Perl distribution 
  $t->color_theme('Default::sepia');  # if not, a nice default is picked
 
  # fill data
- $t->columns(["name", "color", "price"]);
- $t->add_row(["chiki"      , "yellow",  2000]);
- $t->add_row(["lays"       , "green" ,  7000]);
- $t->add_row(["tao kae noi", "blue"  , 18500]);
+ $t->columns(["name"       , "color" , "price"]);
+ $t->add_row(["chiki"      , "yellow",    2000]);
+ $t->add_row(["lays"       , "green" ,    7000]);
+ $t->add_row(["tao kae noi", "blue"  ,   18500]);
 
  # draw it!
  say $t->draw;
@@ -2843,20 +2848,34 @@ row span? column span?
 
 =head1 SEE ALSO
 
+=head2 Related to Text::ANSITable family
+
 For collections of border styles, search for C<Text::ANSITable::BorderStyle::*>
 modules.
 
 For collections of color themes, search for C<Text::ANSITable::ColorTheme::*>
 modules.
 
-Other table-formatting modules: L<Text::Table>, L<Text::SimpleTable>,
-L<Text::ASCIITable>, L<Text::UnicodeTable::Simple>, L<Table::Simple> (uses
-Moose). There are a couple of "extensions" for Text::ASCIITable:
-L<Text::ASCIITable::TW>, L<Text::ASCIITable::Wrap>; Text::ANSITable can be an
-alternative for all those modules since it can already handle wide-characters,
-multiline text in cells.
+=head2 Other table-formatting CPAN modules
 
-Modules used: L<Text::ANSI::Util>, L<Color::ANSI::Util>.
+L<Text::ASCIITable> is one of the most popular table-formatting module. There
+are a couple of "extensions" for Text::ASCIITable: L<Text::ASCIITable::TW>,
+L<Text::ASCIITable::Wrap>; Text::ANSITable can be an alternative for all those
+modules since it can already handle wide-characters, multiline text in cells.
+
+L<Text::TabularDisplay>
+
+L<Text::Table>
+
+L<Text::SimpleTable>
+
+L<Text::UnicodeTable::Simple>
+
+L<Table::Simple>
+
+=head2 Other
+
+Unix command B<column> (e.g. C<column -t>).
 
 =head1 HOMEPAGE
 

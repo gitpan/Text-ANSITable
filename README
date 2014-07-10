@@ -3,8 +3,8 @@ NAME
     ANSI colors
 
 VERSION
-    This document describes version 0.33 of Text::ANSITable (from Perl
-    distribution Text-ANSITable), released on 2014-06-19.
+    This document describes version 0.34 of Text::ANSITable (from Perl
+    distribution Text-ANSITable), released on 2014-07-10.
 
 SYNOPSIS
      use 5.010;
@@ -20,10 +20,10 @@ SYNOPSIS
      $t->color_theme('Default::sepia');  # if not, a nice default is picked
 
      # fill data
-     $t->columns(["name", "color", "price"]);
-     $t->add_row(["chiki"      , "yellow",  2000]);
-     $t->add_row(["lays"       , "green" ,  7000]);
-     $t->add_row(["tao kae noi", "blue"  , 18500]);
+     $t->columns(["name"       , "color" , "price"]);
+     $t->add_row(["chiki"      , "yellow",    2000]);
+     $t->add_row(["lays"       , "green" ,    7000]);
+     $t->add_row(["tao kae noi", "blue"  ,   18500]);
 
      # draw it!
      say $t->draw;
@@ -1061,20 +1061,32 @@ TODO/BUGS
     row span? column span?
 
 SEE ALSO
+  Related to Text::ANSITable family
     For collections of border styles, search for
     "Text::ANSITable::BorderStyle::*" modules.
 
     For collections of color themes, search for
     "Text::ANSITable::ColorTheme::*" modules.
 
-    Other table-formatting modules: Text::Table, Text::SimpleTable,
-    Text::ASCIITable, Text::UnicodeTable::Simple, Table::Simple (uses
-    Moose). There are a couple of "extensions" for Text::ASCIITable:
+  Other table-formatting CPAN modules
+    Text::ASCIITable is one of the most popular table-formatting module.
+    There are a couple of "extensions" for Text::ASCIITable:
     Text::ASCIITable::TW, Text::ASCIITable::Wrap; Text::ANSITable can be an
     alternative for all those modules since it can already handle
     wide-characters, multiline text in cells.
 
-    Modules used: Text::ANSI::Util, Color::ANSI::Util.
+    Text::TabularDisplay
+
+    Text::Table
+
+    Text::SimpleTable
+
+    Text::UnicodeTable::Simple
+
+    Table::Simple
+
+  Other
+    Unix command column (e.g. "column -t").
 
 HOMEPAGE
     Please visit the project's homepage at

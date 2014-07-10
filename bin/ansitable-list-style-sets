@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!perl
 
 use 5.010;
 use strict;
@@ -6,7 +6,7 @@ use warnings;
 
 use Text::ANSITable;
 
-our $VERSION = '0.33'; # VERSION
+our $VERSION = '0.34'; # VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -41,7 +41,7 @@ ansitable-list-style-sets - List available style sets for Text::ANSITable
 
 =head1 VERSION
 
-This document describes version 0.33 of ansitable-list-style-sets (from Perl distribution Text-ANSITable), released on 2014-06-19.
+This document describes version 0.34 of ansitable-list-style-sets (from Perl distribution Text-ANSITable), released on 2014-07-10.
 
 =head1 HOMEPAGE
 
