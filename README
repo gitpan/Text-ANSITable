@@ -3,8 +3,8 @@ NAME
     ANSI colors
 
 VERSION
-    This document describes version 0.34 of Text::ANSITable (from Perl
-    distribution Text-ANSITable), released on 2014-07-10.
+    This document describes version 0.35 of Text::ANSITable (from Perl
+    distribution Text-ANSITable), released on 2014-12-05.
 
 SYNOPSIS
      use 5.010;
@@ -55,8 +55,6 @@ DESCRIPTION
     instead of "CamelCase", and it uses arrayref for "columns" and
     "add_row". When specifying border styles, the order of characters are
     slightly different. More fine-grained options to customize appearance.
-
-    It uses Moo object system.
 
 BORDER STYLES
     To list available border styles:
@@ -1094,7 +1092,7 @@ HOMEPAGE
 
 SOURCE
     Source repository is at
-    <https://github.com/sharyanto/perl-Text-ANSITable>.
+    <https://github.com/perlancar/perl-Text-ANSITable>.
 
 BUGS
     Please report any bugs or feature requests on the bugtracker website
@@ -1104,10 +1102,10 @@ BUGS
     to an existing test-file that illustrates the bug or desired feature.
 
 AUTHOR
-    Steven Haryanto <stevenharyanto@gmail.com>
+    perlancar <perlancar@cpan.org>
 
 COPYRIGHT AND LICENSE
-    This software is copyright (c) 2014 by Steven Haryanto.
+    This software is copyright (c) 2014 by perlancar@cpan.org.
 
     This is free software; you can redistribute it and/or modify it under
     the same terms as the Perl 5 programming language system itself.

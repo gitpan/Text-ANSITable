@@ -1,5 +1,8 @@
 package Text::ANSITable;
 
+our $DATE = '2014-12-05'; # DATE
+our $VERSION = '0.35'; # VERSION
+
 use 5.010001;
 use Log::Any '$log';
 use Moo;
@@ -9,8 +12,6 @@ use experimental 'smartmatch';
 use Scalar::Util 'looks_like_number';
 use Text::ANSI::Util qw(ta_mbswidth_height ta_mbpad ta_add_color_resets
                         ta_mbwrap);
-
-our $VERSION = '0.34'; # VERSION
 
 my $ATTRS = [qw(
 
@@ -636,7 +637,7 @@ sub apply_style_set {
 sub list_style_sets {
     require Module::List;
     require Module::Load;
-    require SHARYANTO::Package::Util;
+    require Package::MoreUtil;
 
     my ($self, $detail) = @_;
 
@@ -654,7 +655,7 @@ sub list_style_sets {
             my $name = $mod; $name =~ s/\A\Q$prefix\:://;
             my $summary = $mod->summary;
             # we don't have meta, so dig it ourselves
-            my %ct = SHARYANTO::Package::Util::list_package_contents($mod);
+            my %ct = Package::MoreUtil::list_package_contents($mod);
             my $args = [sort grep {!/\W/ && !/\A(new|summary|apply)\z/}
                             keys %ct];
             $all_sets->{$name} = {name=>$name, summary=>$summary, args=>$args};
@@ -1641,7 +1642,7 @@ Text::ANSITable - Create nice formatted tables using extended ASCII and ANSI col
 
 =head1 VERSION
 
-This document describes version 0.34 of Text::ANSITable (from Perl distribution Text-ANSITable), released on 2014-07-10.
+This document describes version 0.35 of Text::ANSITable (from Perl distribution Text-ANSITable), released on 2014-12-05.
 
 =head1 SYNOPSIS
 
@@ -1696,8 +1697,6 @@ Compared to Text::ASCIITable, it uses C<lower_case> method/attr names instead of
 C<CamelCase>, and it uses arrayref for C<columns> and C<add_row>. When
 specifying border styles, the order of characters are slightly different. More
 fine-grained options to customize appearance.
-
-It uses L<Moo> object system.
 
 =for Pod::Coverage ^(BUILD|draw_.+|get_color_reset|get_border_char)$
 
@@ -2883,7 +2882,7 @@ Please visit the project's homepage at L<https://metacpan.org/release/Text-ANSIT
 
 =head1 SOURCE
 
-Source repository is at L<https://github.com/sharyanto/perl-Text-ANSITable>.
+Source repository is at L<https://github.com/perlancar/perl-Text-ANSITable>.
 
 =head1 BUGS
 
@@ -2895,11 +2894,11 @@ feature.
 
 =head1 AUTHOR
 
-Steven Haryanto <stevenharyanto@gmail.com>
+perlancar <perlancar@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2014 by Steven Haryanto.
+This software is copyright (c) 2014 by perlancar@cpan.org.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

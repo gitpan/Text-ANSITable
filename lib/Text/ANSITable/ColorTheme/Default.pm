@@ -7,7 +7,7 @@ use warnings;
 use Function::Fallback::CoreOrPP qw(clone);
 use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
 
-our $VERSION = '0.34'; # VERSION
+our $VERSION = '0.35'; # VERSION
 
 our %color_themes = (
 
@@ -122,7 +122,7 @@ Text::ANSITable::ColorTheme::Default - Default color themes
 
 =head1 VERSION
 
-This document describes version 0.34 of Text::ANSITable::ColorTheme::Default (from Perl distribution Text-ANSITable), released on 2014-07-10.
+This document describes version 0.35 of Text::ANSITable::ColorTheme::Default (from Perl distribution Text-ANSITable), released on 2014-12-05.
 
 =head1 HOMEPAGE
 
@@ -130,7 +130,7 @@ Please visit the project's homepage at L<https://metacpan.org/release/Text-ANSIT
 
 =head1 SOURCE
 
-Source repository is at L<https://github.com/sharyanto/perl-Text-ANSITable>.
+Source repository is at L<https://github.com/perlancar/perl-Text-ANSITable>.
 
 =head1 BUGS
 
@@ -142,11 +142,11 @@ feature.
 
 =head1 AUTHOR
 
-Steven Haryanto <stevenharyanto@gmail.com>
+perlancar <perlancar@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2014 by Steven Haryanto.
+This software is copyright (c) 2014 by perlancar@cpan.org.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
