@@ -18,6 +18,9 @@ meta-spec:
   version: '1.4'
 name: Text-ANSITable
 requires:
+  Border::Style::Role: '0'
+  Color::RGB::Util: '0'
+  Color::Theme::Role::ANSI: '0'
   Data::Unixish::ANSI: '0.02'
   Data::Unixish::Apply: '1.33'
   DateTime: '0'
@@ -28,9 +31,7 @@ requires:
   Moo: '0'
   Package::MoreUtil: '0'
   Parse::VarName: '0'
-  SHARYANTO::Color::Util: '0'
-  SHARYANTO::Role::BorderStyle: '0.72'
-  SHARYANTO::Role::ColorTheme: '0.72'
+  Term::App::Role::Attrs: '0'
   Text::ANSI::Util: '0.08'
   experimental: '0'
   namespace::clean: '0'
@@ -39,7 +40,7 @@ resources:
   bugtracker: https://rt.cpan.org/Public/Dist/Display.html?Name=Text-ANSITable
   homepage: https://metacpan.org/release/Text-ANSITable
   repository: git://github.com/perlancar/perl-Text-ANSITable.git
-version: '0.35'
+version: '0.36'
 x_Dist_Zilla:
   perl:
     version: '5.018002'
@@ -139,7 +140,7 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::OurDate
       name: '@Author::PERLANCAR/OurDate'
-      version: '0.01'
+      version: '0.02'
     -
       class: Dist::Zilla::Plugin::PodWeaver
       config:
@@ -195,7 +196,7 @@ x_Dist_Zilla:
             -
               class: Pod::Weaver::Plugin::Rinci
               name: '@Author::PERLANCAR/Rinci'
-              version: '0.21'
+              version: '0.23'
             -
               class: Pod::Weaver::Section::Leftovers
               name: '@Author::PERLANCAR/Leftovers'
@@ -207,11 +208,11 @@ x_Dist_Zilla:
             -
               class: Pod::Weaver::Section::Completion::GetoptLongComplete
               name: '@Author::PERLANCAR/Completion::GetoptLongComplete'
-              version: '0.04'
+              version: '0.05'
             -
               class: Pod::Weaver::Section::Completion::PerinciCmdLine
               name: '@Author::PERLANCAR/Completion::PerinciCmdLine'
-              version: '0.07'
+              version: '0.08'
             -
               class: Pod::Weaver::Section::Homepage::DefaultCPAN
               name: '@Author::PERLANCAR/Homepage::DefaultCPAN'

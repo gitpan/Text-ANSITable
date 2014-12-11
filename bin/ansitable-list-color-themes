@@ -6,7 +6,7 @@ use warnings;
 
 use Text::ANSITable;
 
-our $VERSION = '0.35'; # VERSION
+our $VERSION = '0.36'; # VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -57,7 +57,7 @@ ansitable-list-color-themes - List available color themes for Text::ANSITable
 
 =head1 VERSION
 
-This document describes version 0.35 of ansitable-list-color-themes (from Perl distribution Text-ANSITable), released on 2014-12-05.
+This document describes version 0.36 of ansitable-list-color-themes (from Perl distribution Text-ANSITable), released on 2014-12-11.
 
 =head1 HOMEPAGE
 

@@ -1,13 +1,14 @@
 package Text::ANSITable::ColorTheme::Default;
 
+our $DATE = '2014-12-11'; # DATE
+our $VERSION = '0.36'; # VERSION
+
 use 5.010;
 use strict;
 use warnings;
 
+use Color::RGB::Util qw(mix_2_rgb_colors);
 use Function::Fallback::CoreOrPP qw(clone);
-use SHARYANTO::Color::Util qw(mix_2_rgb_colors);
-
-our $VERSION = '0.35'; # VERSION
 
 our %color_themes = (
 
@@ -122,7 +123,7 @@ Text::ANSITable::ColorTheme::Default - Default color themes
 
 =head1 VERSION
 
-This document describes version 0.35 of Text::ANSITable::ColorTheme::Default (from Perl distribution Text-ANSITable), released on 2014-12-05.
+This document describes version 0.36 of Text::ANSITable::ColorTheme::Default (from Perl distribution Text-ANSITable), released on 2014-12-11.
 
 =head1 HOMEPAGE
 
