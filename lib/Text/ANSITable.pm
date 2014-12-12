@@ -1,7 +1,7 @@
 package Text::ANSITable;
 
-our $DATE = '2014-12-11'; # DATE
-our $VERSION = '0.36'; # VERSION
+our $DATE = '2014-12-12'; # DATE
+our $VERSION = '0.37'; # VERSION
 
 use 5.010001;
 use Log::Any '$log';
@@ -1643,7 +1643,7 @@ Text::ANSITable - Create nice formatted tables using extended ASCII and ANSI col
 
 =head1 VERSION
 
-This document describes version 0.36 of Text::ANSITable (from Perl distribution Text-ANSITable), released on 2014-12-11.
+This document describes version 0.37 of Text::ANSITable (from Perl distribution Text-ANSITable), released on 2014-12-12.
 
 =head1 SYNOPSIS
 
@@ -2883,7 +2883,7 @@ Please visit the project's homepage at L<https://metacpan.org/release/Text-ANSIT
 
 =head1 SOURCE
 
-Source repository is at L<https://github.com/perlancar/perl-Text-ANSITable>.
+Source repository is at L<https://github.com/sharyanto/perl-Text-ANSITable>.
 
 =head1 BUGS
 

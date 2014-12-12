@@ -1,12 +1,13 @@
 #!perl
 
+our $DATE = '2014-12-12'; # DATE
+our $VERSION = '0.37'; # VERSION
+
 use 5.010;
 use strict;
 use warnings;
 
 use Text::ANSITable;
-
-our $VERSION = '0.36'; # VERSION
 
 binmode(STDOUT, ":utf8");
 
@@ -53,7 +54,49 @@ ansitable-list-border-styles - List available border styles for Text::ANSITable
 
 =head1 VERSION
 
-This document describes version 0.36 of ansitable-list-border-styles (from Perl distribution Text-ANSITable), released on 2014-12-11.
+This document describes version 0.37 of ansitable-list-border-styles (from Perl distribution Text-ANSITable), released on 2014-12-12.
+
+=head1 SYNOPSIS
+
+ % ansitable-list-border-styles
+
+Sample output:
+
+ Tip: you can run me with border style name as argument to try it out.
+ ┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┒
+ │ Name                       Summary                                                              box_chars?   utf8? ┃
+ │                                                                                                                    ┃
+ │ Default::none_ascii        No border                                                                ✕          ✕   ┃
+ │ Default::none_boxchar      No border                                                                ✓          ✕   ┃
+ │ Default::single_ascii      Single                                                                   ✕          ✕   ┃
+ │ Default::single_boxchar    Single                                                                   ✓          ✕   ┃
+ │ Default::singleh_ascii     Single, horizontal only                                                  ✕          ✕   ┃
+ │ Default::singleh_boxchar   Single, horizontal only                                                  ✓          ✕   ┃
+ │ Default::singlei_ascii     Single, inner only (like in psql command-line client)                    ✕          ✕   ┃
+ │ Default::singlei_boxchar   Single, inner only (like in psql command-line client)                    ✓          ✕   ┃
+ │ Default::singleo_ascii     Single, outer only                                                       ✕          ✕   ┃
+ │ Default::singleo_boxchar   Single, outer only                                                       ✓          ✕   ┃
+ │ Default::singlev_ascii     Single border, only vertical                                             ✕          ✕   ┃
+ │ Default::singlev_boxchar   Single, vertical only                                                    ✓          ✕   ┃
+ │ Default::space_ascii       Space as border                                                          ✕          ✕   ┃
+ │ Default::space_boxchar     Space as border                                                          ✓          ✕   ┃
+ │ Default::spacei_ascii      Space, inner-only                                                        ✕          ✕   ┃
+ │ Default::spacei_boxchar    Space, inner-only                                                        ✓          ✕   ┃
+ │ Default::bold              Bold                                                                     ✕          ✓   ┃
+ ├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┨
+ │ Default::brick             Single, bold on bottom right to give illusion of depth                   ✕          ✓   ┃
+ │ Default::bricko (*)        Single, outer only, bold on bottom right to give illusion of depth       ✕          ✓   ┃
+ │ Default::csingle           Curved single                                                            ✕          ✓   ┃
+ │ Default::double            Double                                                                   ✕          ✓   ┃
+ │ Default::none_utf8         No border                                                                ✕          ✓   ┃
+ │ Default::single_utf8       Single                                                                   ✕          ✓   ┃
+ │ Default::singleh_utf8      Single, horizontal only                                                  ✕          ✓   ┃
+ │ Default::singlei_utf8      Single, inner only (like in psql command-line client)                    ✕          ✓   ┃
+ │ Default::singleo_utf8      Single, outer only                                                       ✕          ✓   ┃
+ │ Default::singlev_utf8      Single, vertical only                                                    ✕          ✓   ┃
+ │ Default::space_utf8        Space as border                                                          ✕          ✓   ┃
+ │ Default::spacei_utf8       Space, inner-only                                                        ✕          ✓   ┃
+ ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 =head1 HOMEPAGE
 
@@ -61,7 +104,7 @@ Please visit the project's homepage at L<https://metacpan.org/release/Text-ANSIT
 
 =head1 SOURCE
 
-Source repository is at L<https://github.com/perlancar/perl-Text-ANSITable>.
+Source repository is at L<https://github.com/sharyanto/perl-Text-ANSITable>.
 
 =head1 BUGS
 
