@@ -1,7 +1,7 @@
 #!perl
 
-our $DATE = '2014-12-12'; # DATE
-our $VERSION = '0.37'; # VERSION
+our $DATE = '2014-12-13'; # DATE
+our $VERSION = '0.38'; # VERSION
 
 use 5.010;
 use strict;
@@ -42,7 +42,7 @@ ansitable-list-style-sets - List available style sets for Text::ANSITable
 
 =head1 VERSION
 
-This document describes version 0.37 of ansitable-list-style-sets (from Perl distribution Text-ANSITable), released on 2014-12-12.
+This document describes version 0.38 of ansitable-list-style-sets (from Perl distribution Text-ANSITable), released on 2014-12-13.
 
 =head1 SYNOPSIS
 

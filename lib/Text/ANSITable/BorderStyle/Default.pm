@@ -1,11 +1,12 @@
 package Text::ANSITable::BorderStyle::Default;
 
+our $DATE = '2014-12-13'; # DATE
+our $VERSION = '0.38'; # VERSION
+
 use 5.010;
 use strict;
 use utf8;
 use warnings;
-
-our $VERSION = '0.37'; # VERSION
 
 our %border_styles = (
 
@@ -437,7 +438,7 @@ Text::ANSITable::BorderStyle::Default - Default border styles
 
 =head1 VERSION
 
-This document describes version 0.37 of Text::ANSITable::BorderStyle::Default (from Perl distribution Text-ANSITable), released on 2014-12-12.
+This document describes version 0.38 of Text::ANSITable::BorderStyle::Default (from Perl distribution Text-ANSITable), released on 2014-12-13.
 
 =head1 HOMEPAGE
 
@@ -468,66 +469,313 @@ the same terms as the Perl 5 programming language system itself.
 
 =head1 INCLUDED BORDER STYLES
 
-=over
+=head2 Default::bold
 
-=item * bold (Bold)
+Bold (utf8: yes, box_chars: no).
 
-=item * brick (Single, bold on bottom right to give illusion of depth)
+ ┏━━━━━━━━━┳━━━━━━━━━┓
+ ┃ column1 ┃ column2 ┃
+ ┣━━━━━━━━━╋━━━━━━━━━┫
+ ┃ row1.1  ┃ row1.2  ┃
+ ┃ row2.1  ┃ row3.2  ┃
+ ┣━━━━━━━━━╋━━━━━━━━━┫
+ ┃ row3.1  ┃ row3.2  ┃
+ ┗━━━━━━━━━┻━━━━━━━━━┛
 
-=item * bricko (Single, outer only, bold on bottom right to give illusion of depth)
 
-=item * csingle (Curved single)
+=head2 Default::brick
 
-=item * double (Double)
+Single, bold on bottom right to give illusion of depth (utf8: yes, box_chars: no).
 
-=item * none_ascii (No border)
+ ┌─────────┬─────────┒
+ │ column1 │ column2 ┃
+ ├─────────┼─────────┨
+ │ row1.1  │ row1.2  ┃
+ │ row2.1  │ row3.2  ┃
+ ├─────────┼─────────┨
+ │ row3.1  │ row3.2  ┃
+ ┕━━━━━━━━━┷━━━━━━━━━┛
 
-=item * none_boxchar (No border)
 
-=item * none_utf8 (No border)
+=head2 Default::bricko
 
-=item * single_ascii (Single)
+Single, outer only, bold on bottom right to give illusion of depth (utf8: yes, box_chars: no).
 
-=item * single_boxchar (Single)
+ ┌───────────────────┒
+ │ column1   column2 ┃
+ │                   ┃
+ │ row1.1    row1.2  ┃
+ │ row2.1    row3.2  ┃
+ ├───────────────────┨
+ │ row3.1    row3.2  ┃
+ ┕━━━━━━━━━━━━━━━━━━━┛
 
-=item * single_utf8 (Single)
 
-=item * singleh_ascii (Single, horizontal only)
+=head2 Default::csingle
 
-=item * singleh_boxchar (Single, horizontal only)
+Curved single (utf8: yes, box_chars: no).
 
-=item * singleh_utf8 (Single, horizontal only)
+ ╭─────────┬─────────╮
+ │ column1 │ column2 │
+ ├─────────┼─────────┤
+ │ row1.1  │ row1.2  │
+ │ row2.1  │ row3.2  │
+ ├─────────┼─────────┤
+ │ row3.1  │ row3.2  │
+ ╰─────────┴─────────╯
 
-=item * singlei_ascii (Single, inner only (like in psql command-line client))
 
-=item * singlei_boxchar (Single, inner only (like in psql command-line client))
+=head2 Default::double
 
-=item * singlei_utf8 (Single, inner only (like in psql command-line client))
+Double (utf8: yes, box_chars: no).
 
-=item * singleo_ascii (Single, outer only)
+ ╔═════════╦═════════╗
+ ║ column1 ║ column2 ║
+ ╠═════════╬═════════╣
+ ║ row1.1  ║ row1.2  ║
+ ║ row2.1  ║ row3.2  ║
+ ╠═════════╬═════════╣
+ ║ row3.1  ║ row3.2  ║
+ ╚═════════╩═════════╝
 
-=item * singleo_boxchar (Single, outer only)
 
-=item * singleo_utf8 (Single, outer only)
+=head2 Default::none_ascii
 
-=item * singlev_ascii (Single border, only vertical)
+No border (utf8: no, box_chars: no).
 
-=item * singlev_boxchar (Single, vertical only)
+  column1  column2 
+  row1.1   row1.2  
+  row2.1   row3.2  
+  ------------------- 
+  row3.1   row3.2  
 
-=item * singlev_utf8 (Single, vertical only)
 
-=item * space_ascii (Space as border)
+=head2 Default::none_boxchar
 
-=item * space_boxchar (Space as border)
+No border (utf8: no, box_chars: yes).
 
-=item * space_utf8 (Space as border)
+=head2 Default::none_utf8
 
-=item * spacei_ascii (Space, inner-only)
+No border (utf8: yes, box_chars: no).
 
-=item * spacei_boxchar (Space, inner-only)
+  column1  column2 
+  row1.1   row1.2  
+  row2.1   row3.2  
+ ───────────────────
+  row3.1   row3.2  
 
-=item * spacei_utf8 (Space, inner-only)
 
-=back
+=head2 Default::single_ascii
+
+Single (utf8: no, box_chars: no).
+
+ .---------+---------.
+ | column1 | column2 |
+ +---------+---------+
+ | row1.1  | row1.2  |
+ | row2.1  | row3.2  |
+ +---------+---------+
+ | row3.1  | row3.2  |
+ `---------+---------'
+
+
+=head2 Default::single_boxchar
+
+Single (utf8: no, box_chars: yes).
+
+=head2 Default::single_utf8
+
+Single (utf8: yes, box_chars: no).
+
+ ┌─────────┬─────────┐
+ │ column1 │ column2 │
+ ├─────────┼─────────┤
+ │ row1.1  │ row1.2  │
+ │ row2.1  │ row3.2  │
+ ├─────────┼─────────┤
+ │ row3.1  │ row3.2  │
+ └─────────┴─────────┘
+
+
+=head2 Default::singleh_ascii
+
+Single, horizontal only (utf8: no, box_chars: no).
+
+ ---------------------
+   column1   column2  
+ ---------------------
+   row1.1    row1.2   
+   row2.1    row3.2   
+ ---------------------
+   row3.1    row3.2   
+ ---------------------
+
+
+=head2 Default::singleh_boxchar
+
+Single, horizontal only (utf8: no, box_chars: yes).
+
+=head2 Default::singleh_utf8
+
+Single, horizontal only (utf8: yes, box_chars: no).
+
+ ─────────────────────
+   column1   column2  
+ ─────────────────────
+   row1.1    row1.2   
+   row2.1    row3.2   
+ ─────────────────────
+   row3.1    row3.2   
+ ─────────────────────
+
+
+=head2 Default::singlei_ascii
+
+Single, inner only (like in psql command-line client) (utf8: no, box_chars: no).
+
+   column1 | column2  
+  ---------+--------- 
+   row1.1  | row1.2   
+   row2.1  | row3.2   
+  ---------+--------- 
+   row3.1  | row3.2   
+
+
+=head2 Default::singlei_boxchar
+
+Single, inner only (like in psql command-line client) (utf8: no, box_chars: yes).
+
+=head2 Default::singlei_utf8
+
+Single, inner only (like in psql command-line client) (utf8: yes, box_chars: no).
+
+   column1 │ column2  
+  ─────────┼───────── 
+   row1.1  │ row1.2   
+   row2.1  │ row3.2   
+  ─────────┼───────── 
+   row3.1  │ row3.2   
+
+
+=head2 Default::singleo_ascii
+
+Single, outer only (utf8: no, box_chars: no).
+
+ .-------------------.
+ | column1   column2 |
+ |                   |
+ | row1.1    row1.2  |
+ | row2.1    row3.2  |
+ +-------------------+
+ | row3.1    row3.2  |
+ `-------------------'
+
+
+=head2 Default::singleo_boxchar
+
+Single, outer only (utf8: no, box_chars: yes).
+
+=head2 Default::singleo_utf8
+
+Single, outer only (utf8: yes, box_chars: no).
+
+ ┌───────────────────┐
+ │ column1   column2 │
+ │                   │
+ │ row1.1    row1.2  │
+ │ row2.1    row3.2  │
+ ├───────────────────┤
+ │ row3.1    row3.2  │
+ └───────────────────┘
+
+
+=head2 Default::singlev_ascii
+
+Single border, only vertical (utf8: no, box_chars: no).
+
+ |         |         |
+ | column1 | column2 |
+ |         |         |
+ | row1.1  | row1.2  |
+ | row2.1  | row3.2  |
+ |---------|---------|
+ | row3.1  | row3.2  |
+ |         |         |
+
+
+=head2 Default::singlev_boxchar
+
+Single, vertical only (utf8: no, box_chars: yes).
+
+=head2 Default::singlev_utf8
+
+Single, vertical only (utf8: yes, box_chars: no).
+
+ │         │         │
+ │ column1 │ column2 │
+ │         │         │
+ │ row1.1  │ row1.2  │
+ │ row2.1  │ row3.2  │
+ │─────────│─────────│
+ │ row3.1  │ row3.2  │
+ │         │         │
+
+
+=head2 Default::space_ascii
+
+Space as border (utf8: no, box_chars: no).
+
+                      
+   column1   column2  
+                      
+   row1.1    row1.2   
+   row2.1    row3.2   
+  ------------------- 
+   row3.1    row3.2   
+                      
+
+
+=head2 Default::space_boxchar
+
+Space as border (utf8: no, box_chars: yes).
+
+=head2 Default::space_utf8
+
+Space as border (utf8: yes, box_chars: no).
+
+                      
+   column1   column2  
+                      
+   row1.1    row1.2   
+   row2.1    row3.2   
+  ─────────────────── 
+   row3.1    row3.2   
+                      
+
+
+=head2 Default::spacei_ascii
+
+Space, inner-only (utf8: no, box_chars: no).
+
+  column1   column2 
+  row1.1    row1.2  
+  row2.1    row3.2  
+ -------------------
+  row3.1    row3.2  
+
+
+=head2 Default::spacei_boxchar
+
+Space, inner-only (utf8: no, box_chars: yes).
+
+=head2 Default::spacei_utf8
+
+Space, inner-only (utf8: yes, box_chars: no).
+
+  column1   column2 
+  row1.1    row1.2  
+  row2.1    row3.2  
+ ───────────────────
+  row3.1    row3.2  
 
 =cut

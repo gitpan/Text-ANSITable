@@ -3,8 +3,8 @@ NAME
     ANSI colors
 
 VERSION
-    This document describes version 0.37 of Text::ANSITable (from Perl
-    distribution Text-ANSITable), released on 2014-12-12.
+    This document describes version 0.38 of Text::ANSITable (from Perl
+    distribution Text-ANSITable), released on 2014-12-13.
 
 SYNOPSIS
      use 5.010;

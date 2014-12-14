@@ -1,7 +1,7 @@
 package Text::ANSITable::StyleSet::AltRow;
 
-our $DATE = '2014-12-12'; # DATE
-our $VERSION = '0.37'; # VERSION
+our $DATE = '2014-12-13'; # DATE
+our $VERSION = '0.38'; # VERSION
 
 use 5.010;
 use Moo;
@@ -54,7 +54,7 @@ Text::ANSITable::StyleSet::AltRow
 
 =head1 VERSION
 
-This document describes version 0.37 of Text::ANSITable::StyleSet::AltRow (from Perl distribution Text-ANSITable), released on 2014-12-12.
+This document describes version 0.38 of Text::ANSITable::StyleSet::AltRow (from Perl distribution Text-ANSITable), released on 2014-12-13.
 
 =for Pod::Coverage ^(summary|apply)$
 

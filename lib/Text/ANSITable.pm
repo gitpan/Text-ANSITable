@@ -1,7 +1,7 @@
 package Text::ANSITable;
 
-our $DATE = '2014-12-12'; # DATE
-our $VERSION = '0.37'; # VERSION
+our $DATE = '2014-12-13'; # DATE
+our $VERSION = '0.38'; # VERSION
 
 use 5.010001;
 use Log::Any '$log';
@@ -1643,7 +1643,7 @@ Text::ANSITable - Create nice formatted tables using extended ASCII and ANSI col
 
 =head1 VERSION
 
-This document describes version 0.37 of Text::ANSITable (from Perl distribution Text-ANSITable), released on 2014-12-12.
+This document describes version 0.38 of Text::ANSITable (from Perl distribution Text-ANSITable), released on 2014-12-13.
 
 =head1 SYNOPSIS
 

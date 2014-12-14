@@ -1,7 +1,7 @@
 package Text::ANSITable::ColorTheme::Default;
 
-our $DATE = '2014-12-12'; # DATE
-our $VERSION = '0.37'; # VERSION
+our $DATE = '2014-12-13'; # DATE
+our $VERSION = '0.38'; # VERSION
 
 use 5.010;
 use strict;
@@ -123,7 +123,7 @@ Text::ANSITable::ColorTheme::Default - Default color themes
 
 =head1 VERSION
 
-This document describes version 0.37 of Text::ANSITable::ColorTheme::Default (from Perl distribution Text-ANSITable), released on 2014-12-12.
+This document describes version 0.38 of Text::ANSITable::ColorTheme::Default (from Perl distribution Text-ANSITable), released on 2014-12-13.
 
 =head1 HOMEPAGE
 
@@ -154,19 +154,9 @@ the same terms as the Perl 5 programming language system itself.
 
 =head1 INCLUDED COLOR THEMES
 
-=over
+=head2 Default::default_gradation
 
-=item * default_gradation (Default (for terminal with black background))
-
-
-Border color has gradation from top to bottom. Accept arguments C<border1> and
-C<border2> to set first (top) and second (bottom) foreground RGB colors. Colors
-will fade from the top color to bottom color. Also accept C<border1_bg> and
-C<border2_bg> to set background RGB colors.
-
-
-
-=item * default_gradation_whitebg (Default (for terminal with white background))
+Default (for terminal with black background).
 
 
 Border color has gradation from top to bottom. Accept arguments C<border1> and
@@ -176,12 +166,28 @@ C<border2_bg> to set background RGB colors.
 
 
 
-=item * default_nogradation (Default (for terminal with black background))
+=head2 Default::default_gradation_whitebg
 
-=item * default_nogradation_whitebg (Default (for terminal with white background))
+Default (for terminal with white background).
 
-=item * no_color (Special theme that means no color)
 
-=back
+Border color has gradation from top to bottom. Accept arguments C<border1> and
+C<border2> to set first (top) and second (bottom) foreground RGB colors. Colors
+will fade from the top color to bottom color. Also accept C<border1_bg> and
+C<border2_bg> to set background RGB colors.
+
+
+
+=head2 Default::default_nogradation
+
+Default (for terminal with black background).
+
+=head2 Default::default_nogradation_whitebg
+
+Default (for terminal with white background).
+
+=head2 Default::no_color
+
+Special theme that means no color.
 
 =cut

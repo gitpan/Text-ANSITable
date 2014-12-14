@@ -1,7 +1,7 @@
 #!perl
 
-our $DATE = '2014-12-12'; # DATE
-our $VERSION = '0.37'; # VERSION
+our $DATE = '2014-12-13'; # DATE
+our $VERSION = '0.38'; # VERSION
 
 use 5.010;
 use strict;
@@ -54,7 +54,7 @@ ansitable-list-border-styles - List available border styles for Text::ANSITable
 
 =head1 VERSION
 
-This document describes version 0.37 of ansitable-list-border-styles (from Perl distribution Text-ANSITable), released on 2014-12-12.
+This document describes version 0.38 of ansitable-list-border-styles (from Perl distribution Text-ANSITable), released on 2014-12-13.
 
 =head1 SYNOPSIS
 
@@ -82,6 +82,7 @@ Sample output:
  │ Default::space_boxchar     Space as border                                                          ✓          ✕   ┃
  │ Default::spacei_ascii      Space, inner-only                                                        ✕          ✕   ┃
  │ Default::spacei_boxchar    Space, inner-only                                                        ✓          ✕   ┃
+ │ Demo::demo_custom_char     Demoes coderef in chars                                                  ✕          ✕   ┃
  │ Default::bold              Bold                                                                     ✕          ✓   ┃
  ├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┨
  │ Default::brick             Single, bold on bottom right to give illusion of depth                   ✕          ✓   ┃
@@ -96,6 +97,10 @@ Sample output:
  │ Default::singlev_utf8      Single, vertical only                                                    ✕          ✓   ┃
  │ Default::space_utf8        Space as border                                                          ✕          ✓   ┃
  │ Default::spacei_utf8       Space, inner-only                                                        ✕          ✓   ┃
+ │ Extra::dash2               Dash 2                                                                   ✕          ✓   ┃
+ │ Extra::dash3               Dash 3                                                                   ✕          ✓   ┃
+ │ Extra::hboldh_dsingle      Horizontally-bold for header, single for data                            ✕          ✓   ┃
+ │ Extra::hdoubleh_dsingle    Horizontally-double for header, single for data                          ✕          ✓   ┃
  ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 =head1 HOMEPAGE
