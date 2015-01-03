@@ -1,7 +1,7 @@
 package Text::ANSITable;
 
-our $DATE = '2014-12-13'; # DATE
-our $VERSION = '0.38'; # VERSION
+our $DATE = '2015-01-03'; # DATE
+our $VERSION = '0.39'; # VERSION
 
 use 5.010001;
 use Log::Any '$log';
@@ -1629,7 +1629,7 @@ sub draw {
 }
 
 1;
-#ABSTRACT: Create nice formatted tables using extended ASCII and ANSI colors
+# ABSTRACT: Create nice formatted tables using extended ASCII and ANSI colors
 
 __END__
 
@@ -1643,7 +1643,7 @@ Text::ANSITable - Create nice formatted tables using extended ASCII and ANSI col
 
 =head1 VERSION
 
-This document describes version 0.38 of Text::ANSITable (from Perl distribution Text-ANSITable), released on 2014-12-13.
+This document describes version 0.39 of Text::ANSITable (from Perl distribution Text-ANSITable), released on 2015-01-03.
 
 =head1 SYNOPSIS
 
@@ -2833,19 +2833,6 @@ Or, you can use the L<Text::ANSITable::StyleSet::AltRow> style set:
 
  $t->apply_style_set(AltRow => {even_bgcolor=>'202020'});
 
-=head1 TODO/BUGS
-
-Most color themes still look crappy on 256 colors (I develop on Konsole).
-
-Attributes: cell_wrap? (a shorter/nicer version for formats => [[wrap =>
-{ansi=>1, mb=>1}]]).
-
-Column styles: show_{left,right}_border (shorter name? {l,r}border?)
-
-Row styles: show_{top,bottom}_border (shorter name? {t,b}border?)
-
-row span? column span?
-
 =head1 SEE ALSO
 
 =head2 Related to Text::ANSITable family
@@ -2899,7 +2886,7 @@ perlancar <perlancar@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2014 by perlancar@cpan.org.
+This software is copyright (c) 2015 by perlancar@cpan.org.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

@@ -1,7 +1,7 @@
 package Text::ANSITable::StyleSet::AltRow;
 
-our $DATE = '2014-12-13'; # DATE
-our $VERSION = '0.38'; # VERSION
+our $DATE = '2015-01-03'; # DATE
+our $VERSION = '0.39'; # VERSION
 
 use 5.010;
 use Moo;
@@ -42,6 +42,8 @@ sub apply {
 
 1;
 
+# ABSTRACT: Set different foreground and/or background color for odd/even rows";
+
 __END__
 
 =pod
@@ -50,11 +52,11 @@ __END__
 
 =head1 NAME
 
-Text::ANSITable::StyleSet::AltRow
+Text::ANSITable::StyleSet::AltRow - Set different foreground and/or background color for odd/even rows";
 
 =head1 VERSION
 
-This document describes version 0.38 of Text::ANSITable::StyleSet::AltRow (from Perl distribution Text-ANSITable), released on 2014-12-13.
+This document describes version 0.39 of Text::ANSITable::StyleSet::AltRow (from Perl distribution Text-ANSITable), released on 2015-01-03.
 
 =for Pod::Coverage ^(summary|apply)$
 
@@ -90,7 +92,7 @@ perlancar <perlancar@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2014 by perlancar@cpan.org.
+This software is copyright (c) 2015 by perlancar@cpan.org.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
